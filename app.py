@@ -197,11 +197,12 @@ def recommend_schools(
             if pd.isnull(row["average_gpa"]):
                 return None
             diff = row["average_gpa"] - user_gpa
-            if abs(diff) <= 0.3:
+            # Much stricter GPA ranges
+            if abs(diff) <= 0.2:  # Was 0.3
                 return "Match"
-            elif 0.3 < diff <= 0.6:
+            elif 0.2 < diff <= 0.4:  # Was 0.6
                 return "Safety"
-            elif -0.6 <= diff < -0.3:
+            elif -0.4 <= diff < -0.2:  # Was -0.3
                 return "Reach"
             else:
                 return None
@@ -210,11 +211,12 @@ def recommend_schools(
             if pd.isnull(row["sat_combined"]):
                 return None
             diff = row["sat_combined"] - user_sat
-            if abs(diff) <= 150:
+            # Much stricter SAT ranges
+            if abs(diff) <= 100:  # Was 150
                 return "Match"
-            elif 150 < diff <= 300:
+            elif 100 < diff <= 200:  # Was 300
                 return "Safety"
-            elif -300 <= diff < -150:
+            elif -200 <= diff < -100:  # Was -150
                 return "Reach"
             else:
                 return None
@@ -225,6 +227,9 @@ def recommend_schools(
         def get_combined_tier(row):
             gpa = row["gpa_tier"]
             sat = row["sat_tier"]
+            # Require both metrics to be present and match
+            if pd.isnull(gpa) or pd.isnull(sat):
+                return None
             if gpa == "Match" and sat == "Match":
                 return "Match"
             elif "Safety" in (gpa, sat) and "Reach" not in (gpa, sat):
@@ -295,22 +300,30 @@ def recommend_schools(
             return pd.DataFrame()
 
         def calculate_academic_distance(row, user_gpa, user_sat):
-            gpa_distance = 0
-            sat_distance = 0
+            """
+            Calculate a simpler linear academic distance for GPA and SAT.
+            """
+            gpa_distance = 0.0
+            sat_distance = 0.0
             count = 0
             
             if pd.notnull(row["average_gpa"]) and pd.notnull(user_gpa):
-                gpa_distance = abs(row["average_gpa"] - user_gpa) / 4.0  # Normalize to 0-1 scale
+                # Linear difference, normalized by 4.0
+                gpa_diff = abs(row["average_gpa"] - user_gpa)
+                gpa_distance = gpa_diff / 4.0
                 count += 1
                 
             if pd.notnull(row["sat_combined"]) and pd.notnull(user_sat):
-                sat_distance = abs(row["sat_combined"] - user_sat) / 1600  # Normalize to 0-1 scale
+                # Linear difference, normalized by 1600
+                sat_diff = abs(row["sat_combined"] - user_sat)
+                sat_distance = sat_diff / 1600.0
                 count += 1
                 
             if count == 0:
                 return None
             
-            return (gpa_distance + sat_distance) / count if count > 0 else None
+            # Average them if we have both GPA & SAT differences
+            return (gpa_distance + sat_distance) / count
 
         def calculate_earnings_score(row):
             earnings_1yr = row["earn_mdn_1yr_num"] if pd.notnull(row["earn_mdn_1yr_num"]) else 0
@@ -345,7 +358,8 @@ def recommend_schools(
 
         # Calculate scores for each dimension
         final_candidates["academic_distance"] = final_candidates.apply(
-            lambda x: calculate_academic_distance(x, user_gpa, user_sat), axis=1
+            lambda x: calculate_academic_distance(x, user_gpa, user_sat), 
+            axis=1
         )
         final_candidates["earnings_score"] = final_candidates.apply(calculate_earnings_score, axis=1)
         final_candidates["data_completeness"] = final_candidates.apply(calculate_data_completeness, axis=1)
@@ -353,56 +367,94 @@ def recommend_schools(
         # Create composite score with different weights for different scenarios
         def calculate_composite_score(row):
             academic_weight = 0.4
-            earnings_weight = 0.4
+            earnings_weight = 0.3
             completeness_weight = 0.2
-            base_score = 0.1  # Ensure all schools get at least some score
+            selectivity_weight = 0.1
             
-            scores = [base_score]  # Start with base score
-            weights = [0.1]  # Small weight for base score
+            base_score = 0.1
+            scores = [base_score]
+            weights = [0.1]
             
-            # Academic distance (inverse it since lower is better)
+            # Academic distance (lower is better → invert it)
             if pd.notnull(row["academic_distance"]):
                 scores.append(1 - row["academic_distance"])
                 weights.append(academic_weight)
-                
+            
             # Earnings score
             if pd.notnull(row["earnings_score"]):
                 scores.append(row["earnings_score"])
                 weights.append(earnings_weight)
-                
+            
             # Data completeness
             scores.append(row["data_completeness"])
             weights.append(completeness_weight)
             
-            # Normalize weights
-            total_weight = sum(weights)
-            weights = [w/total_weight for w in weights]
+            # Acceptance rate penalty
+            if pd.notnull(row["selectivity_distance"]):
+                penalty_value = -min(row["selectivity_distance"], 1.0)
+                scores.append(penalty_value)
+                weights.append(selectivity_weight)
             
-            return sum(s * w for s, w in zip(scores, weights))
+            total_weight = sum(weights)
+            normalized_weights = [w / total_weight for w in weights]
+            
+            return sum(s * w for s, w in zip(scores, normalized_weights))
+
+        def compute_selectivity_distance(row):
+            """Compute a penalty based on the school's acceptance rate."""
+            accept_rate = row["acceptance_rate_numeric"]
+            if pd.isnull(accept_rate):
+                # If we have no acceptance rate, don't penalize
+                return 0.0
+            
+            # Increase multiplier so that extremely selective schools (e.g., ≤10%) are heavily penalized.
+            # Example: 5% acceptance => penalty= (0.2 - 0.05)*10=1.5
+            penalty = max(0.0, 0.2 - accept_rate) * 10.0
+            return penalty
+
+        # After final_candidates["academic_distance"] is computed:
+
+        final_candidates["selectivity_distance"] = final_candidates.apply(
+            lambda x: compute_selectivity_distance(x),
+            axis=1
+        )
+
+        # Combine academic distance and selectivity distance into a single measure
+        final_candidates["combined_distance"] = final_candidates.apply(
+            lambda x: (
+                x["academic_distance"] + x["selectivity_distance"]
+                if pd.notnull(x["academic_distance"]) 
+                else None
+            ),
+            axis=1
+        )
 
         def assign_tier(row):
-            # First check if we have enough data for meaningful academic comparison
             has_academic_data = pd.notnull(row["academic_distance"])
             has_earnings = pd.notnull(row["earnings_score"])
             data_score = row["data_completeness"]
             
             # If we have very limited data, just mark as an option
-            if data_score < 0.2:  # Less than 20% of key metrics available
+            if data_score < 0.2:
                 return "Option (Limited Data)"
-                
-            # If we have academic data, use it for reach/match/safety
+            
             if has_academic_data:
-                academic_distance = row["academic_distance"]
-                if academic_distance <= 0.2:  # Very close match
+                # Use combined_distance to account for both academic and selectivity
+                combined_distance = row["combined_distance"]
+                
+                if pd.isnull(combined_distance):
+                    return "Option"
+                
+                # Much stricter distance thresholds now that acceptance rate is factored in
+                if combined_distance <= 0.05:
                     prefix = "Strong"
-                elif academic_distance <= 0.4:
+                elif combined_distance <= 0.1:
                     prefix = "Good"
-                elif academic_distance <= 0.6:
+                elif combined_distance <= 0.15:
                     prefix = "Potential"
                 else:
                     prefix = "Consider"
-                    
-                # If we also have earnings data, incorporate that into the tier name
+                
                 if has_earnings and row["earnings_score"] > 0.7:
                     return f"{prefix} Match (High Earnings)"
                 elif has_earnings and row["earnings_score"] > 0.4:
@@ -410,7 +462,6 @@ def recommend_schools(
                 else:
                     return f"{prefix} Match"
             
-            # If we only have earnings data
             elif has_earnings:
                 if row["earnings_score"] > 0.7:
                     return "Option (High Earnings)"
@@ -418,15 +469,24 @@ def recommend_schools(
                     return "Option (Good Earnings)"
                 else:
                     return "Option"
-                    
-            # If we have some data but not enough for academic or earnings comparison
+            
             elif data_score >= 0.2:
                 return "Option (Partial Data)"
-                
+            
             return "Option"
 
         # Calculate scores and sort
         final_candidates["composite_score"] = final_candidates.apply(calculate_composite_score, axis=1)
+        
+        # Adjust composite score based on academic distance
+        def adjust_composite_score(row):
+            if pd.notnull(row["academic_distance"]):
+                # Much more aggressive reduction for schools with large academic distance
+                return row["composite_score"] * (1 - row["academic_distance"] * 0.9)  # Increased from 0.7 to 0.9
+            return row["composite_score"]
+        
+        final_candidates["composite_score"] = final_candidates.apply(adjust_composite_score, axis=1)
+        
         final_candidates = final_candidates.sort_values(
             by=["composite_score", "data_completeness"],  # Use data completeness as secondary sort
             ascending=[False, False]

@@ -51,6 +51,52 @@ def test_recommendations():
         }
     ]
     
+    # Adding new test scenarios
+    additional_test_cases = [
+        {
+            "name": "Business - Low GPA, High SAT",
+            "data": {
+                "gpa": 2.8,
+                "sat": 1450,
+                "program": "Business Administration and Management, General"
+            }
+        },
+        {
+            "name": "Computer Science - High GPA, Low SAT",
+            "data": {
+                "gpa": 3.9,
+                "sat": 1100,
+                "program": "Computer Science"
+            }
+        },
+        {
+            "name": "Agricultural Business - Rare Major, Strong Student",
+            "data": {
+                "gpa": 3.95,
+                "sat": 1550,
+                "program": "Agricultural Business and Management"
+            }
+        },
+        {
+            "name": "Biology - Average GPA, Missing/Low SAT",
+            "data": {
+                "gpa": 3.0,
+                "sat": 0, 
+                "program": "Biology, General"
+            }
+        },
+        {
+            "name": "Computer Science - Perfect Stats",
+            "data": {
+                "gpa": 4.0,
+                "sat": 1580,
+                "program": "Computer Science"
+            }
+        }
+    ]
+    
+    test_cases.extend(additional_test_cases)
+
     # Run tests
     for test in test_cases:
         print(f"\nTesting: {test['name']}")
