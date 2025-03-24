@@ -128,6 +128,50 @@ def test_recommendations():
         except Exception as e:
             print(f"Error processing response: {e}")
 
+def test_additional_scenario():
+    """
+    Tests the fallback logic for a relatively rare program ('Aerospace Aeronautical and Astronautical Engineering')
+    by requesting medium/high stats that might yield fewer than 10 strong matches.
+    """
+    url = "http://localhost:8000/recommendations"
+    
+    scenario = {
+        "name": "Aerospace - Medium/High Fallback Check",
+        "data": {
+            "gpa": 3.6,
+            "sat": 1350,
+            "program": "Aerospace Aeronautical and Astronautical Engineering"
+        }
+    }
+    
+    print(f"\nRunning Additional Test: {scenario['name']}")
+    print("-" * 50)
+    
+    try:
+        response = requests.post(url, json=scenario["data"])
+        response.raise_for_status()
+        
+        result = response.json()
+        print(f"Status Code: {response.status_code}")
+        print(f"Total Schools Found: {result['total_schools']}")
+        print(f"Timestamp: {result['timestamp']}")
+        
+        recommendations = result["recommendations"]
+        
+        # Print all recommendations to see if fallback logic was triggered
+        for i, rec in enumerate(recommendations, start=1):
+            school = rec["School"]
+            tier = rec["Recommendation_Tier"]
+            print(f"{i}. {school} - {tier}")
+        
+    except requests.exceptions.RequestException as e:
+        print(f"HTTP Request Error: {e}")
+    except Exception as e:
+        print(f"Unexpected Error: {e}")
+
 if __name__ == "__main__":
     print("Starting API tests...")
-    test_recommendations() 
+    test_recommendations()
+    
+    # Run the additional fallback scenario test
+    test_additional_scenario() 
