@@ -1,0 +1,3 @@
+    school_programs = pd.read_csv("programs_cleaned.csv")
+    alumni_data = pd.read_csv("companies_data_cleaned.csv")
+    university_data = pd.read_csv("universities_cleaned.csv", low_memory=False).reset_index().rename(columns={"index": "university_id"})
