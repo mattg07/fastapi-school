@@ -1,68 +1,135 @@
 # University Recommendation API
 
-This API provides university recommendations based on a student's GPA, SAT scores, and program of interest.
+A FastAPI-based service that provides university recommendations based on GPA, SAT scores, and program of interest.
+
+## Features
+
+- University recommendations based on:
+  - GPA
+  - SAT scores
+  - Program of interest
+- Comprehensive school information including:
+  - Institution details
+  - Admission rates
+  - Salary data
+  - Fortune 500 hiring companies
+  - Location data
+  - Net price information
+
+## Project Structure
+
+```
+university-recommendation-server/
+├── app.py                 # Main FastAPI application
+├── config/               # Configuration files
+│   └── settings.py       # Application settings
+├── services/            # Business logic
+│   └── recommendation_service.py
+├── data/               # Data files
+│   ├── colleges_data_cleaned.csv
+│   ├── programs_cleaned.csv
+│   ├── school_sup_data.csv
+│   └── companies_data_cleaned.csv
+├── tests/              # Test files
+├── Dockerfile          # Docker configuration
+├── docker-compose.yml  # Docker Compose configuration
+└── requirements.txt    # Python dependencies
+```
 
 ## Setup
 
-1. Install the required dependencies:
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd university-recommendation-server
+```
+
+2. Create and activate a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+3. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-2. Make sure all the required CSV files are in the `recommendation-algo-2` directory:
+4. Place your data files in the `data/` directory:
 - colleges_data_cleaned.csv
 - programs_cleaned.csv
 - school_sup_data.csv
 - companies_data_cleaned.csv
 
-3. Run the API server:
+5. Create a `.env` file in the root directory:
+```env
+DEBUG=0
+CORS_ORIGINS=http://localhost:3000
+```
+
+## Development
+
+Run the development server:
 ```bash
 uvicorn app:app --reload
 ```
 
-The API will be available at `http://localhost:8000`
+## Production Deployment
+
+### Using Docker
+
+1. Build and run with Docker Compose:
+```bash
+docker-compose up --build
+```
+
+2. The API will be available at `http://localhost:8000`
+
+### Without Docker
+
+1. Set up a production server (e.g., using Gunicorn):
+```bash
+gunicorn app:app -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+```
 
 ## API Endpoints
 
-### GET /
-Root endpoint that provides basic API information.
+- `GET /`: API information
+- `GET /health`: Health check endpoint
+- `GET /programs`: List of available programs
+- `POST /recommendations`: Get university recommendations
+- `GET /program_coverage`: Get program coverage statistics
 
-### POST /recommendations
-Generate university recommendations based on the provided criteria.
+## Example Request
 
-Request body:
-```json
-{
-    "gpa": 3.6,
-    "sat": 1300,
-    "program": "Computer Science"
-}
+```bash
+curl -X POST "http://localhost:8000/recommendations" \
+     -H "Content-Type: application/json" \
+     -d '{
+           "gpa": 3.8,
+           "sat": 1450,
+           "program": "Computer Science"
+         }'
 ```
 
-Response:
-```json
-{
-    "recommendations": [
-        {
-            "School": "University Name",
-            "Recommendation_Tier": "Strong Match",
-            "Has_Salary_Data": true,
-            "Median_Earnings_1yr": 65000,
-            "Median_Earnings_5yr": 85000,
-            "Avg_GPA": 3.7,
-            "Avg_SAT": 1350,
-            "Fortune500_Hirers": ["Company1", "Company2"],
-            "Total_Enrollment": 30000,
-            "Admission_Rate": 0.15,
-            "Avg_Net_Price": 25000,
-            "Latitude": 40.7128,
-            "Longitude": -74.0060
-        }
-    ],
-    "timestamp": "2024-03-24 20:00:00",
-    "total_schools": 1
-}
+## Testing
+
+Run tests:
+```bash
+pytest
 ```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## License
+
+[Your chosen license]
 
 ## API Documentation
 

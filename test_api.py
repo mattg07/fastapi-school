@@ -23,7 +23,7 @@ def test_recommendations():
         print(f"Error getting valid programs: {e}")
         return
     
-    # Test cases with valid program names
+    # Test cases
     test_cases = [
         {
             "name": "Computer Science - High GPA/SAT",
@@ -51,7 +51,7 @@ def test_recommendations():
         }
     ]
     
-    # Adding new test scenarios
+    # Additional scenarios
     additional_test_cases = [
         {
             "name": "Business - Low GPA, High SAT",
@@ -78,10 +78,10 @@ def test_recommendations():
             }
         },
         {
-            "name": "Biology - Average GPA, Missing/Low SAT",
+            "name": "Biology - Average GPA, Missing SAT",
             "data": {
                 "gpa": 3.0,
-                "sat": 0, 
+                "sat": 0,
                 "program": "Biology, General"
             }
         },
@@ -104,11 +104,9 @@ def test_recommendations():
         
         try:
             response = requests.post(url, json=test['data'])
-            response.raise_for_status()  # Raise an exception for bad status codes
+            response.raise_for_status()  # Raise exception if status != 2xx
             
             result = response.json()
-            
-            # Print summary
             print(f"Status Code: {response.status_code}")
             print(f"Total Schools Found: {result['total_schools']}")
             print(f"Timestamp: {result['timestamp']}")
@@ -119,19 +117,19 @@ def test_recommendations():
                 print(f"\n{i}. {rec['School']}")
                 print(f"   Tier: {rec['Recommendation_Tier']}")
                 print(f"   GPA/SAT: {rec['Avg_GPA']}/{rec['Avg_SAT']}")
-                earnings = f"${rec['Median_Earnings_1yr']:,.0f}/${rec['Median_Earnings_5yr']:,.0f}" if rec['Median_Earnings_1yr'] and rec['Median_Earnings_5yr'] else "No data"
-                print(f"   Earnings (1yr/5yr): {earnings}")
-                print(f"   Fortune 500 Hirers: {', '.join(rec['Fortune500_Hirers'][:3])}")
+                # Checking some fields:
+                print(f"   Admission Rate: {rec.get('Admission_Rate')}")
+                print(f"   Fortune 500 Hirers: {rec.get('Fortune500_Hirers')[:3]}")
                 
         except requests.exceptions.RequestException as e:
-            print(f"Error making request: {e}")
+            print(f"Request Error: {e}")
         except Exception as e:
-            print(f"Error processing response: {e}")
+            print(f"Processing Error: {e}")
 
 def test_additional_scenario():
     """
-    Tests the fallback logic for a relatively rare program ('Aerospace Aeronautical and Astronautical Engineering')
-    by requesting medium/high stats that might yield fewer than 10 strong matches.
+    Tests fallback logic for a rare program by requesting medium/high stats
+    that might yield fewer than 10 strong matches.
     """
     url = "http://localhost:8000/recommendations"
     
@@ -156,13 +154,9 @@ def test_additional_scenario():
         print(f"Total Schools Found: {result['total_schools']}")
         print(f"Timestamp: {result['timestamp']}")
         
-        recommendations = result["recommendations"]
-        
-        # Print all recommendations to see if fallback logic was triggered
-        for i, rec in enumerate(recommendations, start=1):
-            school = rec["School"]
-            tier = rec["Recommendation_Tier"]
-            print(f"{i}. {school} - {tier}")
+        # Print all recommendations
+        for i, rec in enumerate(result["recommendations"], start=1):
+            print(f"{i}. {rec['School']} - {rec['Recommendation_Tier']}")
         
     except requests.exceptions.RequestException as e:
         print(f"HTTP Request Error: {e}")
@@ -172,6 +166,4 @@ def test_additional_scenario():
 if __name__ == "__main__":
     print("Starting API tests...")
     test_recommendations()
-    
-    # Run the additional fallback scenario test
     test_additional_scenario() 
