@@ -5,7 +5,6 @@ from typing import List, Optional
 from datetime import datetime
 import os
 
-from config.settings import settings  # Adjust if your settings path differs
 from services.recommendation_service import recommend_schools, VALID_PROGRAMS
 
 import pandas as pd
@@ -16,7 +15,7 @@ import numpy as np
 # =====================================================
 
 app = FastAPI(
-    title=settings.PROJECT_NAME,
+    title="School Selector API",
     description="API for generating university recommendations based on GPA, SAT scores, and program of interest",
     version="1.0.0"
 )
@@ -24,7 +23,7 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
