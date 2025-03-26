@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 import os
+import json
 
 from services.recommendation_service import recommend_schools, VALID_PROGRAMS
 
@@ -38,20 +39,29 @@ class RecommendationRequest(BaseModel):
     sat: int
     program: str
 
+class AdmissionMetrics(BaseModel):
+    metric: str
+    value: float
+
+class AdmissionYearStats(BaseModel):
+    year: int
+    metrics: dict
+
 class Recommendation(BaseModel):
     School: str
     Recommendation_Tier: str
     Has_Salary_Data: bool
-    Median_Earnings_1yr: Optional[float]
-    Median_Earnings_5yr: Optional[float]
-    Avg_GPA: Optional[float]
-    Avg_SAT: Optional[float]
+    Median_Earnings_1yr: Optional[float] = None
+    Median_Earnings_5yr: Optional[float] = None
+    Avg_GPA: Optional[float] = None
+    Avg_SAT: Optional[float] = None
     Fortune500_Hirers: List[str]
-    Total_Enrollment: Optional[int]
-    Admission_Rate: Optional[float]
-    Avg_Net_Price: Optional[float]
-    Latitude: Optional[float]
-    Longitude: Optional[float]
+    Total_Enrollment: Optional[int] = None
+    Admission_Rate: Optional[float] = None
+    Avg_Net_Price: Optional[float] = None
+    Latitude: Optional[float] = None
+    Longitude: Optional[float] = None
+    Admission_Statistics: Optional[List[AdmissionYearStats]] = None
 
 class RecommendationResponse(BaseModel):
     recommendations: List[Recommendation]
@@ -84,20 +94,26 @@ async def get_recommendations(request: RecommendationRequest):
     Generates a list of recommended schools based on the user's GPA, SAT, and program.
     """
     try:
-        recommendations_df = recommend_schools(
+        recommendations_list = recommend_schools(
             user_gpa=request.gpa,
             user_sat=request.sat,
-            user_program=request.program
+            user_program=request.program,
+            verbose=True  # Enable verbose output
         )
         
-        if recommendations_df.empty:
+        if not recommendations_list:
             raise HTTPException(
                 status_code=404,
                 detail=f"No recommendations found for program: {request.program}"
             )
         
-        recommendations_list = recommendations_df.to_dict('records')
+        # Clean the data for JSON serialization
         recommendations_list = clean_for_json(recommendations_list)
+        
+        # Print debug information
+        print("\nDebug: First recommendation structure:")
+        if recommendations_list:
+            print(json.dumps(recommendations_list[0], indent=2))
         
         return RecommendationResponse(
             recommendations=recommendations_list,
@@ -107,8 +123,9 @@ async def get_recommendations(request: RecommendationRequest):
         
     except Exception as e:
         import traceback
-        print(f"Error details: {str(e)}")
-        print(f"Traceback: {traceback.format_exc()}")
+        print(f"\nError details: {str(e)}")
+        print(f"Error type: {type(e)}")
+        print(f"Traceback:\n{traceback.format_exc()}")
         raise HTTPException(
             status_code=500,
             detail=f"Error generating recommendations: {str(e)}\n{traceback.format_exc()}"
@@ -143,7 +160,7 @@ def get_program_coverage():
 
     path_colleges = "recommendation-algo-2/colleges_data_cleaned.csv"
     path_programs = "recommendation-algo-2/programs_cleaned.csv"
-    path_school_sup = "recommendation-algo-2/school_sup_data.csv"
+    path_school_sup = "recommendation-algo-2/school_sup_data_cleaned.csv"
 
     if not os.path.exists(path_colleges) or not os.path.exists(path_programs) or not os.path.exists(path_school_sup):
         return {

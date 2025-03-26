@@ -1,5 +1,6 @@
 import requests
 import json
+from tabulate import tabulate
 from datetime import datetime
 
 def get_valid_programs():
@@ -163,7 +164,81 @@ def test_additional_scenario():
     except Exception as e:
         print(f"Unexpected Error: {e}")
 
+def format_admission_stats(stats):
+    if not stats:
+        return "No data"
+    
+    formatted = []
+    for year_data in stats:
+        year = year_data['year']
+        metrics = year_data.get('metrics', {})
+        
+        formatted.append(f"\n{year}:")
+        for metric, value in metrics.items():
+            if isinstance(value, (int, float)):
+                value = f"{value:.2f}"
+            formatted.append(f"  {metric}: {value}")
+    
+    return "\n".join(formatted)
+
+def display_recommendations():
+    # Make the API request
+    response = requests.post(
+        "http://127.0.0.1:8000/recommendations",
+        json={
+            "gpa": 3.5,
+            "sat": 1400,
+            "program": "Computer Science"
+        }
+    )
+    
+    try:
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        print(f"\nError status code: {response.status_code}")
+        print(f"Error response content: {response.text}")
+        raise
+        
+    data = response.json()
+    
+    print("\nStarting API visualization...")
+    print("\n=== API Response Summary ===")
+    print(f"Total Schools: {data['total_schools']}")
+    print(f"Timestamp: {data['timestamp']}")
+    
+    # Prepare data for tabulation
+    table_data = []
+    for school in data['recommendations']:
+        row = [
+            school['School'],
+            school.get('1yr_Earnings', 'N/A'),
+            school.get('5yr_Earnings', 'N/A'),
+            school.get('Avg_GPA', 'N/A'),
+            school.get('Avg_SAT', 'N/A'),
+            school.get('Admission_Rate', 'N/A'),
+            school.get('Net_Price', 'N/A'),
+            school.get('Enrollment', 'N/A'),
+            school.get('Fortune500_Hirers', 0)
+        ]
+        table_data.append(row)
+    
+    # Print the table
+    print("\n=== Consider Match ===")
+    print(tabulate(
+        table_data,
+        headers=['School', '1yr Earnings', '5yr Earnings', 'Avg GPA', 'Avg SAT', 'Admit Rate', 'Net Price', 'Enrollment', 'Fortune 500'],
+        tablefmt='grid'
+    ))
+    
+    # Print admission statistics if available
+    print("\nAdmission Statistics:")
+    for school in data['recommendations']:
+        print(f"\n{school['School']} — {school['Recommendation_Tier']}")
+        if 'Admission_Statistics' in school and school['Admission_Statistics']:
+            stats = format_admission_stats(school['Admission_Statistics'])
+            print(stats)
+        else:
+            print("No admission statistics available")
+
 if __name__ == "__main__":
-    print("Starting API tests...")
-    test_recommendations()
-    test_additional_scenario() 
+    display_recommendations() 

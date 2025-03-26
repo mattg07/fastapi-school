@@ -1,0 +1,57 @@
+School,Recommendation_Tier,Has_Salary_Data,Median_Earnings_1yr,Median_Earnings_5yr,Avg_GPA,Avg_SAT,Fortune500_Hirers,Total_Enrollment,Admission_Rate,Avg_Net_Price,Latitude,Longitude
+auburn university,Safety,False,,,4.0,1300.0,"['Norfolk Southern Railway', 'Weyerhaeuser', 'Aflac', 'Genuine Parts Company', 'Regions Financial Corporation', 'International Paper', 'Mid-America Apartment Communities', 'United Rentals', 'Vulcan Materials Company', 'Smurfit WestRock', 'Mohawk Industries', 'J.B. Hunt', 'Home Depot (The)', 'Global Payments', 'Teledyne Technologies', 'Delta Air Lines', 'Hubbell Incorporated', 'Southern Company']","31,764",0.71,24028.0,32.599378,-85.488258
+northern arizona university,Reach,False,,,3.7,1130.0,"['Deckers Brands', 'GoDaddy', 'Freeport-McMoRan']","28,086",0.8,15692.0,35.188449,-111.653724
+san francisco state university,Reach,True,41565.0,59685.0,3.4,1046.0,"['Gilead Sciences', 'Healthpeak Properties', 'Ross Stores', 'PG&E Corporation', 'Airbnb', 'Essex Property Trust', 'Autodesk', 'Workday, Inc.']","25,282",0.94,14757.0,37.721224,-122.476799
+san jose state university,Reach,False,,,3.5,1139.0,"['Cadence Design Systems', 'PayPal', 'Intel', 'Fortinet', 'KLA Corporation', 'Hewlett Packard Enterprise', 'Visa Inc.', 'Western Digital', 'Costco', 'Advanced Micro Devices', 'Supermicro', 'Tesla, Inc.', 'F5, Inc.', 'Equinix', 'Gilead Sciences', 'Apple Inc.', 'Trimble Inc.', 'Bio-Techne', 'Federal Realty Investment Trust', 'eBay', 'Workday, Inc.', 'Arista Networks', 'CrowdStrike', 'NetApp', 'Verisign', 'Netflix', 'Cisco', 'Adobe Inc.', 'Juniper Networks', 'Applied Materials', 'Intuitive Surgical', 'Palo Alto Networks', 'Cooper Companies (The)', 'Essex Property Trust', 'Agilent Technologies', 'Expeditors International', 'Lam Research', 'Synopsys', 'Walmart', 'Nvidia', 'Broadcom', 'Danaher Corporation', 'Ross Stores', 'Alexandria Real Estate Equities', 'Microchip Technology', 'Monolithic Power Systems', 'PG&E Corporation', 'ServiceNow', 'Intuit', 'Meta Platforms']","35,751",0.77,15995.0,37.336569,-121.880621
+university of connecticut,Match,True,35618.0,73079.0,3.8,1312.0,"['W. R. Berkley Corporation', 'CVS Health', 'Medtronic', 'FactSet', 'Hartford (The)', 'Cigna', 'Eversource Energy', 'RTX Corporation', 'Vertex Pharmaceuticals', 'Ametek', 'General Dynamics', 'Otis Worldwide', 'Citizens Financial Group', 'Travelers Companies (The)', 'Hubbell Incorporated']","27,003",0.55,22233.0,41.809098,-72.249948
+university of delaware,Safety,False,,,4.0,1261.0,"['International Flavors & Fragrances', 'American Water Works', 'DuPont', 'Exelon', 'Merck & Co.', 'NVR, Inc.', 'Air Products', 'MarketAxess', 'FMC Corporation', 'Hologic', 'Incyte', 'M&T Bank', 'Waters Corporation', 'Agilent Technologies']","24,039",0.74,19747.0,39.679577,-75.752822
+eckerd college,Match,False,,,3.6,1210.0,[],"1,993",0.65,43732.0,27.715798,-82.687043
+university of florida,Match,True,23809.0,58561.0,3.9,1394.0,"['PulteGroup', 'Gartner', 'Aflac', 'D. R. Horton', 'Kimco Realty', 'Fidelity National Information Services', 'Motorola Solutions', 'Home Depot (The)', 'Walt Disney Company (The)', 'Delta Air Lines', 'Franklin Resources', 'Allstate', 'Duke Energy', 'Walgreens Boots Alliance', 'HCA Healthcare', 'NextEra Energy', 'Mosaic Company (The)', 'Royal Caribbean Group', 'Norwegian Cruise Line Holdings', 'Carnival', 'Texas Instruments', 'L3Harris', 'Brown & Brown', 'Regency Centers', 'Lennar', 'CSX Corporation', 'CVS Health', 'Roper Technologies', 'Lockheed Martin', 'Raymond James Financial', 'Rollins, Inc.', 'Darden Restaurants']","55,211",0.23,10075.0,29.64629,-82.347911
+berry college,Match,True,33258.0,,3.8,1245.0,[],"2,360",0.66,24605.0,34.290414,-85.189202
+university of georgia,Safety,False,,,4.0,1347.0,[],"40,607",0.43,16580.0,33.956262,-83.374039
+university of hawaii at manoa,Match,False,,,3.7,1170.0,[],"19,074",0.73,15193.0,21.298598,-157.818979
+idaho state university,Safety,False,,,3.4,1460.0,"['Lamb Weston', 'ON Semiconductor']","12,301",0.99,12999.0,42.863832,-112.432312
+university of idaho,Reach,False,,,3.4,1137.0,"['Lamb Weston', 'Micron Technology']","11,507",0.74,14929.0,46.727406,-117.014167
+olivet nazarene university,Reach,False,,,3.5,1098.0,[],"3,255",0.58,20006.0,41.155237,-87.875165
+iowa state university,Match,False,,,3.7,1220.0,"['Hormel Foods', 'W. R. Berkley Corporation', 'DuPont', 'Alliant Energy', 'Corteva', 'Conagra Brands', 'Deere & Company', 'IDEX Corporation', '3M', 'Principal Financial Group', 'General Mills', 'Garmin', 'Target Corporation', 'Tyson Foods', 'Lennox International', 'Union Pacific Corporation', 'Emerson Electric']","29,969",0.9,16105.0,42.026212,-93.648504
+friends university,Reach,True,24692.0,,3.4,1109.0,['Textron'],"1,724",0.63,20686.0,37.678459,-97.367048
+kentucky wesleyan college,Reach,True,17085.0,,3.3,1141.0,[],813,0.69,18605.0,37.744489,-87.119658
+university of kentucky,Match,False,,,3.6,1227.0,"['PPL Corporation', 'Fifth Third Bancorp', 'American Water Works', 'Vulcan Materials Company', 'Martin Marietta Materials', 'Ventas', 'TransDigm Group', 'Humana', 'Marathon Petroleum', 'Yum! Brands', 'Brown–Forman', 'Cintas', 'Kroger', 'Cincinnati Financial']","31,547",0.95,19831.0,38.038911,-84.504747
+university of maine,Match,True,35130.0,,3.5,1159.0,"['Idexx Laboratories', 'Packaging Corporation of America']","12,231",0.94,16365.0,44.899257,-68.669332
+university of new england,Reach,True,28509.0,44700.0,3.4,1142.0,['Idexx Laboratories'],"6,434",0.96,36474.0,43.458591,-70.38535
+unity environmental university,Reach,True,30987.0,44818.0,3.3,,[],"4,281",0.94,26080.0,43.905745,-70.257277
+frostburg state university,Reach,True,29851.0,,3.5,1033.0,[],"4,067",0.88,15970.0,39.650918,-78.934293
+madonna university,Reach,False,,,3.5,1042.0,[],"2,109",0.65,17730.0,42.384323,-83.404722
+michigan state university,Match,True,26801.0,49355.0,3.8,1223.0,"['Amcor', 'Aflac', 'Kraft Heinz', 'Conagra Brands', 'LabCorp', 'DTE Energy', 'GE Aerospace', 'General Mills', 'Waste Management', 'Hormel Foods', 'Ford Motor Company', 'Howmet Aerospace', 'Zimmer Biomet', 'Ulta Beauty', 'Marathon Petroleum', 'Interpublic Group of Companies (The)', ""Domino's"", 'W. W. Grainger', 'CMS Energy', 'Charles River Laboratories', 'General Motors', 'DuPont', 'C.H. Robinson', 'Clorox', 'Stryker Corporation', 'Lilly (Eli)', 'Dow Inc.', 'Kellanova', 'Ecolab', 'IDEX Corporation', 'Huntington Bancshares', 'Eaton Corporation', 'Hershey Company (The)', 'Masco', 'Packaging Corporation of America', 'Altria', 'Darden Restaurants']","50,023",0.88,16655.0,42.73212,-84.476111
+northern michigan university,Reach,False,,38797.0,3.4,1096.0,[],"6,970",0.71,15453.0,46.559751,-87.406568
+mississippi state university,Match,False,,,3.6,1246.0,"['International Paper', 'United Rentals', 'Entergy', 'CF Industries', 'FedEx', 'Packaging Corporation of America', 'Mid-America Apartment Communities', 'Weyerhaeuser', 'Steel Dynamics']","22,649",0.75,16402.0,33.454852,-88.790139
+hastings college,Reach,False,,,3.5,1076.0,[],936,0.71,21670.0,40.59025,-98.374403
+canisius university,Reach,True,26398.0,40744.0,3.3,1158.0,['M&T Bank'],"2,492",0.78,18828.0,42.925206,-78.852577
+suny college of environmental science and forestry,Match,False,,44379.0,3.7,1217.0,[],"1,976",0.7,22133.0,43.034765,-76.138724
+state university of new york at oswego,Reach,True,27922.0,40758.0,3.2,1158.0,"['Paychex', 'Constellation Energy']","6,906",0.83,16398.0,43.454287,-76.540798
+utica university,Reach,False,,,3.4,1110.0,[],"3,861",0.81,22782.0,43.096213,-75.272916
+mars hill university,Reach,False,,,3.5,1051.0,[],"1,032",0.74,18735.0,35.82752,-82.551827
+north carolina state university at raleigh,Match,True,25069.0,,3.9,1349.0,[],"36,700",0.47,14600.0,35.785111,-78.674517
+university of north dakota,Reach,True,24721.0,,3.6,1147.0,"['Delta Air Lines', 'Hess Corporation', 'Ameriprise Financial', 'United Airlines Holdings']","13,876",0.83,16780.0,47.921654,-97.071738
+university of akron main campus,Reach,False,,,3.5,1118.0,[],"13,465",0.83,17328.0,41.075923,-81.511167
+kent state university at kent,Reach,True,25491.0,37701.0,3.5,1146.0,[],"25,854",0.88,19034.0,41.146653,-81.342533
+malone university,Reach,False,,,3.5,1046.0,[],"1,199",0.75,19897.0,40.825662,-81.376863
+muskingum university,Reach,False,,,3.4,1058.0,[],"2,117",0.86,20157.0,39.996585,-81.737127
+ohio wesleyan university,Match,True,29547.0,,3.7,1155.0,[],"1,410",0.52,26628.0,40.295963,-83.069757
+oregon state university,Match,True,27491.0,36871.0,3.6,1202.0,"['Nike, Inc.', 'Lam Research', 'Trimble Inc.', 'Fortive', 'Garmin', 'Kroger', 'Weyerhaeuser', 'Waste Management']","34,292",0.83,21444.0,44.56395,-123.274723
+bucknell university,Match,False,,,3.7,1355.0,[],"3,787",0.33,39359.0,40.954317,-76.882616
+delaware valley university,Reach,True,27287.0,36401.0,3.5,1077.0,[],"2,178",0.95,28530.0,40.298659,-75.158452
+franklin and marshall college,Match,False,,,3.8,1346.0,[],"1,990",0.36,28038.0,40.048045,-76.319037
+union university,Match,False,,,3.8,1259.0,['FedEx'],"2,731",0.53,26906.0,35.676896,-88.858524
+southwestern university,Match,False,,,3.5,1238.0,[],"1,483",0.45,29830.0,30.634341,-97.665738
+texas state university,Reach,True,22264.0,47662.0,3.4,1102.0,"['Universal Health Services', 'Gartner', 'Monster Beverage', 'D. R. Horton', 'United Rentals', 'Martin Marietta Materials', 'EOG Resources', 'Cintas', 'Lennar', 'Texas Pacific Land Corporation', 'Valero Energy', 'CrowdStrike', 'Kinder Morgan', 'Dell Technologies']","38,171",0.88,13750.0,29.888885,-97.943029
+texas tech university,Match,False,,,3.7,1181.0,"['Coterra', 'Occidental Petroleum', 'Diamondback Energy', 'D. R. Horton', 'ExxonMobil', 'Texas Instruments', 'Vistra Corp.', 'ConocoPhillips', 'EOG Resources', 'Atmos Energy', 'Kinder Morgan', 'Texas Pacific Land Corporation', 'Valero Energy', 'Devon Energy', 'Globe Life']","40,378",0.67,15452.0,33.583448,-101.874783
+brigham young university,Match,True,24457.0,51337.0,3.9,1326.0,"['Verisk Analytics', 'Adobe Inc.', 'Lamb Weston', 'Extra Space Storage', 'Global Payments', 'NRG Energy']","34,464",0.67,13150.0,40.250851,-111.649281
+utah state university,Match,False,,48309.0,3.6,1201.0,"['Nucor', 'NRG Energy', 'Verisk Analytics', 'Extra Space Storage']","27,943",0.94,13530.0,41.740748,-111.81391
+weber state university,Reach,True,28461.0,44320.0,3.3,1080.0,"['NRG Energy', 'Extra Space Storage']","29,914",1.0,11767.0,41.192591,-111.944845
+university of vermont,Match,True,22321.0,37794.0,3.9,1287.0,"['Idexx Laboratories', 'Keurig Dr Pepper']","14,088",0.6,20235.0,44.477325,-73.196646
+liberty university,Match,True,23988.0,,3.6,1171.0,"['Universal Health Services', 'Norfolk Southern Railway', 'Dominion Energy', 'Huntington Ingalls Industries', 'NVR, Inc.', 'CoStar Group', 'Dollar Tree', 'UDR, Inc.', 'CSX Corporation', 'Tractor Supply']","96,709",0.99,28762.0,37.350232,-79.18222
+washington state university,Reach,True,28469.0,52434.0,3.3,1131.0,"['F5, Inc.', 'Lamb Weston', 'Expedia Group', 'Fortive', 'Starbucks', 'Costco', 'Weyerhaeuser', 'Expeditors International', 'Boeing']","27,539",0.83,17931.0,46.730448,-117.158168
+carroll university,Match,True,25303.0,,3.5,1162.0,['Generac'],"3,283",0.72,24094.0,43.004527,-88.228114
+university of wyoming,Match,True,29359.0,43996.0,3.6,1203.0,[],"11,100",0.96,12224.0,41.311773,-105.57931
+beacon college,Reach,False,,,3.3,,[],501,0.52,43600.0,28.811281,-81.87415

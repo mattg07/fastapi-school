@@ -84,6 +84,14 @@ def parse_dollar_amount(x):
     except:
         return np.nan
 
+def numeric_or_none(value):
+    """Convert a value to float if possible, otherwise return None."""
+    if pd.isnull(value):
+        return None
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return None
 
 def recommend_schools(
     user_gpa: float,
@@ -91,7 +99,7 @@ def recommend_schools(
     user_program: str,
     path_colleges: str = "recommendation-algo-2/colleges_data_cleaned.csv",
     path_programs: str = "recommendation-algo-2/programs_cleaned.csv",
-    path_school_sup: str = "recommendation-algo-2/school_sup_data.csv",
+    path_school_sup: str = "recommendation-algo-2/school_sup_data_cleaned.csv",
     path_companies: str = "recommendation-algo-2/companies_data_cleaned.csv",
     verbose: bool = True
 ):
@@ -123,6 +131,34 @@ def recommend_schools(
         df_programs = pd.read_csv(path_programs)
         df_school_sup = pd.read_csv(path_school_sup)
         df_companies = pd.read_csv(path_companies)
+
+        # =========== NEW CODE: Load admissions CSV ===============
+        path_admissions = "recommendation-algo-2/admission_trends_cleaned.csv"
+        df_admissions = pd.DataFrame()
+        if os.path.exists(path_admissions):
+            try:
+                df_admissions = pd.read_csv(path_admissions)
+                # Clean the standard name to match our other data
+                df_admissions["standard_name_clean"] = df_admissions["Standard_Name"].str.lower().str.strip()
+                
+                # Convert the data to the format we need
+                df_admissions = df_admissions.pivot_table(
+                    index=['standard_name_clean', 'Year'],
+                    columns='Metric',
+                    values='Value',
+                    aggfunc='first'
+                ).reset_index()
+                
+                # Rename columns to match our expected format
+                df_admissions.columns = [col.lower().replace(' ', '_') for col in df_admissions.columns]
+                
+                if verbose:
+                    print(f"Loaded admissions data: {len(df_admissions)} rows")
+                    print(f"Sample metrics: {df_admissions.columns.tolist()}")
+            except Exception as e:
+                print(f"Warning: Error loading admission trends: {str(e)}")
+                df_admissions = pd.DataFrame()
+        # =========== END NEW CODE ================================
 
         if verbose:
             print("Loaded data files:")
@@ -499,10 +535,43 @@ def recommend_schools(
 
         final_candidates["number_of_students"] = final_candidates["number_of_students"].apply(parse_enrollment)
 
+        # =========== NEW CODE: Match each recommended school with its admission data ===============
+        def gather_admission_stats(school_clean):
+            """
+            Return a list of {'metric', 'year', 'value'} rows for the given school,
+            sorted by 'year' descending so you can track the evolution easily.
+            """
+            if df_admissions.empty or not isinstance(school_clean, str):
+                return []
+            matched = df_admissions[df_admissions["standard_name_clean"] == school_clean]
+
+            # Sort by descending year (note: column is lowercase)
+            matched = matched.sort_values(by="year", ascending=False)
+
+            stats_list = []
+            for _, row_adm in matched.iterrows():
+                year_stats = {
+                    "year": int(row_adm["year"]),
+                    "metrics": {}
+                }
+                for col in matched.columns:
+                    if col not in ["standard_name_clean", "year"]:
+                        value = row_adm[col]
+                        if pd.notnull(value):
+                            year_stats["metrics"][col] = float(value)
+                if year_stats["metrics"]:
+                    stats_list.append(year_stats)
+            return stats_list
+
+        # We'll create a new column in final_candidates with the admission stats
+        final_candidates["admission_statistics"] = final_candidates["name_clean"].apply(gather_admission_stats)
+        # =========== END NEW CODE ==================================================================
+
         recommended_cols = [
             "name", "average_gpa", "average_sat_composite", "earn_mdn_1yr_num", "earn_mdn_5yr_num",
             "fortune_500_companies", "number_of_students", "acceptance_rate_numeric", "LATITUDE",
-            "LONGITUDE", "average_net_price_numeric", "tier", "composite_score"
+            "LONGITUDE", "average_net_price_numeric", "tier", "composite_score",
+            "admission_statistics"
         ]
 
         if any(col not in final_candidates.columns for col in recommended_cols):
@@ -524,7 +593,8 @@ def recommend_schools(
                 "LATITUDE": "Latitude",
                 "LONGITUDE": "Longitude",
                 "average_net_price_numeric": "Avg_Net_Price",
-                "tier": "Recommendation_Tier"
+                "tier": "Recommendation_Tier",
+                "admission_statistics": "Admission_Statistics"
             },
             inplace=True
         )
@@ -539,6 +609,68 @@ def recommend_schools(
         ]
         recommendations = recommendations[column_order]
         recommendations.reset_index(drop=True, inplace=True)
+
+        # After merging with school_sup, merge with admissions data
+        if not df_admissions.empty:
+            try:
+                merged = pd.merge(
+                    merged,
+                    df_admissions,
+                    left_on="school_name_clean",
+                    right_on="standard_name_clean",
+                    how="left"
+                )
+            except Exception as e:
+                print(f"Warning: Error merging admission data: {str(e)}")
+
+        # Create recommendations list
+        recommendations = []
+        for _, row in merged.iterrows():
+            school_data = {
+                "School": str(row["name"]),
+                "Recommendation_Tier": str(row["tier"]),
+                "Has_Salary_Data": bool(pd.notnull(row.get("earn_mdn_1yr")) or pd.notnull(row.get("earn_mdn_5yr"))),
+                "Median_Earnings_1yr": numeric_or_none(row.get("earn_mdn_1yr")),
+                "Median_Earnings_5yr": numeric_or_none(row.get("earn_mdn_5yr")),
+                "Avg_GPA": numeric_or_none(row.get("average_gpa")),
+                "Avg_SAT": numeric_or_none(row.get("average_sat_composite")),
+                "Fortune500_Hirers": list(school_to_companies.get(str(row["name_clean"]), set())),
+                "Total_Enrollment": int(row["total_enrollment"]) if pd.notnull(row.get("total_enrollment")) else None,
+                "Admission_Rate": numeric_or_none(row.get("acceptance_rate_numeric")),
+                "Avg_Net_Price": numeric_or_none(row.get("average_net_price_numeric")),
+                "Latitude": numeric_or_none(row.get("LATITUDE")),
+                "Longitude": numeric_or_none(row.get("LONGITUDE"))
+            }
+            
+            # Add admission statistics if available
+            if not df_admissions.empty:
+                try:
+                    stats = []
+                    school_admissions = df_admissions[df_admissions["standard_name_clean"] == str(row["name_clean"])]
+                    
+                    for _, adm_row in school_admissions.iterrows():
+                        year_stats = {
+                            "year": int(adm_row["year"]),
+                            "metrics": {}
+                        }
+                        
+                        for col in school_admissions.columns:
+                            if col not in ["standard_name_clean", "year"]:
+                                value = adm_row[col]
+                                if pd.notnull(value):
+                                    converted_value = numeric_or_none(value)
+                                    if converted_value is not None:
+                                        year_stats["metrics"][col] = converted_value
+                        
+                        if year_stats["metrics"]:
+                            stats.append(year_stats)
+                    
+                    if stats:
+                        school_data["Admission_Statistics"] = sorted(stats, key=lambda x: x["year"], reverse=True)
+                except Exception as e:
+                    print(f"Warning: Error processing admission stats for {row['name']}: {str(e)}")
+            
+            recommendations.append(school_data)
 
         return recommendations
 
