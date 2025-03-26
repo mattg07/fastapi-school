@@ -62,6 +62,11 @@ class Recommendation(BaseModel):
     Latitude: Optional[float] = None
     Longitude: Optional[float] = None
     Admission_Statistics: Optional[List[AdmissionYearStats]] = None
+    Undergraduate_Enrollment: Optional[int] = None
+    White_Enrollment_Percent: Optional[float] = None
+    Black_Enrollment_Percent: Optional[float] = None
+    Hispanic_Enrollment_Percent: Optional[float] = None
+    Asian_Enrollment_Percent: Optional[float] = None
 
 class RecommendationResponse(BaseModel):
     recommendations: List[Recommendation]

@@ -218,7 +218,13 @@ def display_recommendations():
             school.get('Admission_Rate', 'N/A'),
             school.get('Net_Price', 'N/A'),
             school.get('Enrollment', 'N/A'),
-            school.get('Fortune500_Hirers', 0)
+            school.get('Fortune500_Hirers', 0),
+            # Add demographic information
+            school.get('Undergraduate_Enrollment', 'N/A'),
+            f"{school.get('White_Enrollment_Percent', 'N/A')}%",
+            f"{school.get('Black_Enrollment_Percent', 'N/A')}%",
+            f"{school.get('Hispanic_Enrollment_Percent', 'N/A')}%",
+            f"{school.get('Asian_Enrollment_Percent', 'N/A')}%"
         ]
         table_data.append(row)
     
@@ -226,7 +232,7 @@ def display_recommendations():
     print("\n=== Consider Match ===")
     print(tabulate(
         table_data,
-        headers=['School', '1yr Earnings', '5yr Earnings', 'Avg GPA', 'Avg SAT', 'Admit Rate', 'Net Price', 'Enrollment', 'Fortune 500'],
+        headers=['School', '1yr Earnings', '5yr Earnings', 'Avg GPA', 'Avg SAT', 'Admit Rate', 'Net Price', 'Enrollment', 'Fortune 500', 'UG Enrollment', 'White %', 'Black %', 'Hispanic %', 'Asian %'],
         tablefmt='grid'
     ))
     

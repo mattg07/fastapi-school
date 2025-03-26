@@ -639,7 +639,13 @@ def recommend_schools(
                 "Admission_Rate": numeric_or_none(row.get("acceptance_rate_numeric")),
                 "Avg_Net_Price": numeric_or_none(row.get("average_net_price_numeric")),
                 "Latitude": numeric_or_none(row.get("LATITUDE")),
-                "Longitude": numeric_or_none(row.get("LONGITUDE"))
+                "Longitude": numeric_or_none(row.get("LONGITUDE")),
+                # Add demographic fields
+                "Undergraduate_Enrollment": int(row["UG"]) if pd.notnull(row.get("UG")) else None,
+                "White_Enrollment_Percent": numeric_or_none(row.get("UGDS_WHITE")),
+                "Black_Enrollment_Percent": numeric_or_none(row.get("UGDS_BLACK")),
+                "Hispanic_Enrollment_Percent": numeric_or_none(row.get("UGDS_HISP")),
+                "Asian_Enrollment_Percent": numeric_or_none(row.get("UGDS_ASIAN"))
             }
             
             # Add admission statistics if available
