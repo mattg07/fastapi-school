@@ -32,22 +32,16 @@ def load_admissions_data():
     """
     Load admissions data from 'admission_trends_cleaned.csv'.
     Build a nested dictionary:
-        admissions_data_dict[standard_name][year] = { metric1: val, metric2: val, ... }
+        admissions_data_dict[standard_name][year] = { metric: value, ... }
     """
     global admissions_data_dict
-
-    # Adjust path if needed:
     admissions_csv = "recommendation-algo-2/admission_trends_cleaned.csv"
-    #admissions_csv = "admission_trends_cleaned.csv"
-
     if not os.path.exists(admissions_csv):
         print(f"Warning: {admissions_csv} not found, skipping admissions data load.")
         return
-
     try:
         df_ad = pd.read_csv(admissions_csv)
         df_ad["Standard_Name_clean"] = df_ad["Standard_Name"].str.lower().str.strip()
-
         data_dict = {}
         grouped = df_ad.groupby(["Standard_Name_clean", "Year"])
         for (std_name_clean, year), group_df in grouped:
@@ -61,7 +55,6 @@ def load_admissions_data():
                 data_dict[std_name_clean][year][metric] = value
         admissions_data_dict = data_dict
         print("Admissions data loaded into admissions_data_dict.")
-
     except Exception as ex:
         print(f"Error loading admissions data: {ex}")
 
@@ -87,18 +80,14 @@ load_admissions_data()
 # ---------------------------------------------------------------------
 # Helper functions for conversions/parsing
 # ---------------------------------------------------------------------
-
 def find_program(program: str) -> Optional[str]:
     """Find the exact program name from the list of valid programs or suggest the closest match."""
     program_clean = program.lower().strip()
-    
     for valid_program in VALID_PROGRAMS:
         if valid_program.lower() == program_clean:
             return valid_program
-    
     if len(VALID_PROGRAMS) == 0:
         return None
-
     closest_match = None
     min_diff = float('inf')
     for valid_program in VALID_PROGRAMS:
@@ -164,15 +153,15 @@ def recommend_schools(
     verbose: bool = True
 ):
     """
-    Main function to generate a recommendations DataFrame for the given user inputs.
-    Merges multiple CSV files, applies transformations, calculates tiers, fallback, etc.,
-    then returns a final DataFrame ready for the API layer.
+    Generates a recommendations DataFrame for the given user inputs.
+    Merges multiple CSV files, applies transformations, calculates tiers, fallback logic, etc.,
+    and attaches both admissions data and selected school support metrics (UGDS, UG, UGDS_WHITE, UGDS_BLACK, UGDS_HISP, UGDS_ASIAN).
     """
     try:
+        # 1) Determine the exact program name
         exact_program = find_program(program)
         if exact_program is None:
             raise ValueError(f"Invalid program name: '{program}'. Must match one of the valid program names.")
-
         if verbose:
             print(f"\nLoading data for program: {exact_program}")
             print(f"Looking for files in: {os.getcwd()}")
@@ -181,29 +170,28 @@ def recommend_schools(
             print(f"- {path_programs}: {os.path.exists(path_programs)}")
             print(f"- {path_school_sup}: {os.path.exists(path_school_sup)}")
             print(f"- {path_companies}: {os.path.exists(path_companies)}")
-
+        # 2) Load CSV data
         df_colleges = pd.read_csv(path_colleges)
         df_programs = pd.read_csv(path_programs)
         df_school_sup = pd.read_csv(path_school_sup)
         df_companies = pd.read_csv(path_companies)
-
         if verbose:
             print("Loaded data files:")
             print(f"- Colleges: {len(df_colleges)} rows")
             print(f"- Programs: {len(df_programs)} rows")
             print(f"- School Sup: {len(df_school_sup)} rows")
             print(f"- Companies: {len(df_companies)} rows")
-
+        # Basic numeric conversions
         df_colleges["average_sat_composite"] = pd.to_numeric(df_colleges["average_sat_composite"], errors="coerce")
         df_school_sup["SAT_AVG"] = pd.to_numeric(df_school_sup["SAT_AVG"], errors="coerce")
-
+        # Normalize merge keys
         df_colleges["name_clean"] = df_colleges["name"].str.lower().str.strip()
         if "standard_college" in df_programs.columns:
             df_programs["school_name_clean"] = df_programs["standard_college"].str.lower().str.strip()
         else:
             df_programs["school_name_clean"] = df_programs["name"].str.lower().str.strip()
         df_school_sup["school_name_clean"] = df_school_sup["INSTNM"].str.lower().str.strip()
-
+        # Build a lookup for Fortune 500 company hires
         school_cols = [col for col in df_companies.columns if col.startswith("school_")]
         school_to_companies = {}
         for _, row in df_companies.iterrows():
@@ -215,17 +203,16 @@ def recommend_schools(
                     if school_clean not in school_to_companies:
                         school_to_companies[school_clean] = set()
                     school_to_companies[school_clean].add(company_name)
-
+        # 3) Filter programs by the exact matched program
         df_prog_filtered = df_programs[df_programs["program"] == exact_program]
         if verbose:
             print(f"\nProgram filtering results:")
             print(f"Programs matching '{exact_program}': {len(df_prog_filtered)}")
-
         if df_prog_filtered.empty:
             if verbose:
                 print(f"No schools found offering program '{exact_program}'.")
             return pd.DataFrame()
-
+        # 4) Merge program data with colleges
         merged = pd.merge(
             df_prog_filtered,
             df_colleges,
@@ -234,14 +221,12 @@ def recommend_schools(
             how="inner",
             suffixes=("_prog", "_col")
         )
-
         if verbose:
             print(f"Rows after first merge with colleges: {len(merged)}")
             print(f"Columns now: {merged.columns.tolist()}")
-
         if "name_col" in merged.columns:
             merged.rename(columns={"name_col": "name"}, inplace=True)
-
+        # 5) Merge with school_sup (which contains the UGDS fields)
         merged = pd.merge(
             merged,
             df_school_sup,
@@ -249,11 +234,9 @@ def recommend_schools(
             how="inner",
             suffixes=("_col", "_sup")
         )
-
         if verbose:
             print(f"Rows after second merge with school_sup: {len(merged)}")
             print(f"Columns now: {merged.columns.tolist()}")
-
         if "name_col" in merged.columns:
             merged.rename(columns={"name_col": "name"}, inplace=True)
         if "name_prog" in merged.columns:
@@ -262,21 +245,19 @@ def recommend_schools(
             merged.rename(columns={"name_x": "name"}, inplace=True)
         elif "INSTNM" in merged.columns and "name" not in merged.columns:
             merged.rename(columns={"INSTNM": "name"}, inplace=True)
-
         if verbose and "name" not in merged.columns:
             print("Could not find a standard 'name' column. Columns are:", merged.columns.tolist())
         if "name" not in merged.columns:
             if verbose:
                 print("Error: Could not find 'name' column after merges.")
             return pd.DataFrame()
-
+        # 6) Combine SAT columns
         def get_sat_value(row):
             if pd.notnull(row["average_sat_composite"]):
                 return row["average_sat_composite"]
             return row["SAT_AVG"]
-
         merged["sat_combined"] = merged.apply(get_sat_value, axis=1)
-
+        # 7) Tier logic based on GPA and SAT differences
         def gpa_tier(row):
             if pd.isnull(row["average_gpa"]):
                 return None
@@ -289,7 +270,6 @@ def recommend_schools(
                 return "Reach"
             else:
                 return None
-
         def sat_tier(row):
             if pd.isnull(row["sat_combined"]):
                 return None
@@ -302,10 +282,8 @@ def recommend_schools(
                 return "Reach"
             else:
                 return None
-
         merged["gpa_tier"] = merged.apply(gpa_tier, axis=1)
         merged["sat_tier"] = merged.apply(sat_tier, axis=1)
-
         def get_combined_tier(row):
             gpa_val = row["gpa_tier"]
             sat_val = row["sat_tier"]
@@ -319,10 +297,8 @@ def recommend_schools(
                 return "Reach"
             else:
                 return None
-
         merged["tier"] = merged.apply(get_combined_tier, axis=1)
         final_candidates = merged[merged["tier"].notnull()].copy()
-
         if final_candidates.empty:
             fallback_pool = merged.copy()
             fallback_pool["data_score"] = (
@@ -336,17 +312,14 @@ def recommend_schools(
             fallback_top = fallback_pool.head(5).copy()
             fallback_top["tier"] = "Suggested (Fallback)"
             final_candidates = fallback_top
-
         final_candidates["acceptance_rate_numeric"] = final_candidates["acceptance_rate"].apply(parse_accept_rate)
         final_candidates["average_net_price_numeric"] = final_candidates["average_net_price"].apply(parse_dollar_amount)
         final_candidates["earn_mdn_1yr_num"] = final_candidates["earn_mdn_1yr"].apply(numeric_or_nan)
         final_candidates["earn_mdn_5yr_num"] = final_candidates["earn_mdn_5yr"].apply(numeric_or_nan)
-
         def get_companies_for_school(row):
             school_name_clean = row["school_name_clean"]
             return list(school_to_companies.get(school_name_clean, []))
         final_candidates["fortune_500_companies"] = final_candidates.apply(get_companies_for_school, axis=1)
-
         def calculate_academic_distance(row, gpa_val, sat_val):
             gpa_distance = 0.0
             sat_distance = 0.0
@@ -362,7 +335,6 @@ def recommend_schools(
             if count == 0:
                 return None
             return (gpa_distance + sat_distance) / count
-
         def calculate_earnings_score(row):
             earnings_1yr = row["earn_mdn_1yr_num"] if pd.notnull(row["earn_mdn_1yr_num"]) else 0
             earnings_5yr = row["earn_mdn_5yr_num"] if pd.notnull(row["earn_mdn_5yr_num"]) else 0
@@ -377,7 +349,6 @@ def recommend_schools(
             elif earnings_5yr > 0:
                 return score_5yr * 0.8
             return None
-
         def calculate_data_completeness(row):
             metrics = [
                 "average_gpa", "sat_combined", "earn_mdn_1yr_num",
@@ -385,14 +356,12 @@ def recommend_schools(
             ]
             available = sum(1 for metric in metrics if pd.notnull(row[metric]))
             return available / len(metrics)
-
         final_candidates["academic_distance"] = final_candidates.apply(
             lambda x: calculate_academic_distance(x, gpa, sat),
             axis=1
         )
         final_candidates["earnings_score"] = final_candidates.apply(calculate_earnings_score, axis=1)
         final_candidates["data_completeness"] = final_candidates.apply(calculate_data_completeness, axis=1)
-
         def compute_selectivity_distance(row):
             accept_rate = row["acceptance_rate_numeric"]
             if pd.isnull(accept_rate):
@@ -400,13 +369,11 @@ def recommend_schools(
             penalty = max(0.0, 0.2 - accept_rate) * 10.0
             return penalty
         final_candidates["selectivity_distance"] = final_candidates.apply(compute_selectivity_distance, axis=1)
-
         def combine_distances(row):
             if pd.notnull(row["academic_distance"]):
                 return row["academic_distance"] + row["selectivity_distance"]
             return None
         final_candidates["combined_distance"] = final_candidates.apply(combine_distances, axis=1)
-
         def assign_tier(row):
             has_academic_data = pd.notnull(row["academic_distance"])
             has_earnings = pd.notnull(row["earnings_score"])
@@ -442,12 +409,9 @@ def recommend_schools(
                 return "Option (Partial Data)"
             return "Option"
         final_candidates["combined_distance"] = final_candidates.apply(combine_distances, axis=1)
-        final_candidates["composite_score"] = None  # If you wish to add additional scoring
-
+        final_candidates["composite_score"] = None
         final_candidates["tier"] = final_candidates.apply(assign_tier, axis=1)
         final_candidates = final_candidates.sort_values(by=["tier"], ascending=True)
-
-        # Fallback if fewer than 10:
         min_required = 10
         count_final = len(final_candidates)
         if count_final < min_required:
@@ -488,6 +452,7 @@ def recommend_schools(
             if verbose:
                 print(f"Only found {count_final} strong matches. Added {len(fallback_slice)} fallback schools to reach {min_required}.")
         final_candidates["number_of_students"] = final_candidates["number_of_students"].apply(parse_enrollment)
+        # Add the UGDS and related columns from the school_sup data.
         recommended_cols = [
             "school_name_clean",
             "name",
@@ -501,6 +466,12 @@ def recommend_schools(
             "LATITUDE",
             "LONGITUDE",
             "average_net_price_numeric",
+            "UGDS",
+            "UG",
+            "UGDS_WHITE",
+            "UGDS_BLACK",
+            "UGDS_HISP",
+            "UGDS_ASIAN",
             "tier"
         ]
         if "composite_score" in final_candidates.columns:
@@ -542,6 +513,12 @@ def recommend_schools(
             "Avg_Net_Price",
             "Latitude",
             "Longitude",
+            "UGDS",
+            "UG",
+            "UGDS_WHITE",
+            "UGDS_BLACK",
+            "UGDS_HISP",
+            "UGDS_ASIAN",
             "school_name_clean"
         ]
         if "composite_score" in recommendations.columns:
