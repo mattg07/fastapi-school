@@ -30,7 +30,14 @@ def test_recommendations():
             "data": {
                 "gpa": 3.8,
                 "sat": 1450,
-                "program": "Computer Science"
+                "program": "Computer Science",
+                "act": 32,                             # ADDED
+                "location_preference": "any",          # ADDED
+                "cost_preference": "any",              # ADDED
+                "admission_rate_preference": "any",    # ADDED
+                "salary_preference": "any",            # ADDED
+                "fortune500_preference": "any",        # ADDED
+                "number_of_recommendations": 10        # ADDED
             }
         },
         {
@@ -38,7 +45,14 @@ def test_recommendations():
             "data": {
                 "gpa": 3.5,
                 "sat": 1300,
-                "program": "Biology, General"
+                "program": "Biology, General",
+                "act": 28,
+                "location_preference": "any",
+                "cost_preference": "any",
+                "admission_rate_preference": "any",
+                "salary_preference": "any",
+                "fortune500_preference": "any",
+                "number_of_recommendations": 10
             }
         },
         {
@@ -46,7 +60,14 @@ def test_recommendations():
             "data": {
                 "gpa": 3.2,
                 "sat": 1200,
-                "program": "Business Administration and Management, General"
+                "program": "Business Administration and Management, General",
+                "act": 25,
+                "location_preference": "any",
+                "cost_preference": "any",
+                "admission_rate_preference": "any",
+                "salary_preference": "any",
+                "fortune500_preference": "any",
+                "number_of_recommendations": 10
             }
         }
     ]
@@ -58,7 +79,14 @@ def test_recommendations():
             "data": {
                 "gpa": 2.8,
                 "sat": 1450,
-                "program": "Business Administration and Management, General"
+                "program": "Business Administration and Management, General",
+                "act": 24,
+                "location_preference": "any",
+                "cost_preference": "any",
+                "admission_rate_preference": "any",
+                "salary_preference": "any",
+                "fortune500_preference": "any",
+                "number_of_recommendations": 10
             }
         },
         {
@@ -66,7 +94,14 @@ def test_recommendations():
             "data": {
                 "gpa": 3.9,
                 "sat": 1100,
-                "program": "Computer Science"
+                "program": "Computer Science",
+                "act": 30,
+                "location_preference": "any",
+                "cost_preference": "any",
+                "admission_rate_preference": "any",
+                "salary_preference": "any",
+                "fortune500_preference": "any",
+                "number_of_recommendations": 10
             }
         },
         {
@@ -74,15 +109,29 @@ def test_recommendations():
             "data": {
                 "gpa": 3.95,
                 "sat": 1550,
-                "program": "Agricultural Business and Management"
+                "program": "Agricultural Business and Management",
+                "act": 33,
+                "location_preference": "any",
+                "cost_preference": "any",
+                "admission_rate_preference": "any",
+                "salary_preference": "any",
+                "fortune500_preference": "any",
+                "number_of_recommendations": 10
             }
         },
         {
             "name": "Biology - Average GPA, Missing SAT",
             "data": {
                 "gpa": 3.0,
-                "sat": 0,
-                "program": "Biology, General"
+                "sat": 0,   # or maybe 900 to represent a lower-than-average
+                "program": "Biology, General",
+                "act": 20,
+                "location_preference": "any",
+                "cost_preference": "any",
+                "admission_rate_preference": "any",
+                "salary_preference": "any",
+                "fortune500_preference": "any",
+                "number_of_recommendations": 10
             }
         },
         {
@@ -90,7 +139,14 @@ def test_recommendations():
             "data": {
                 "gpa": 4.0,
                 "sat": 1580,
-                "program": "Computer Science"
+                "program": "Computer Science",
+                "act": 36,
+                "location_preference": "any",
+                "cost_preference": "any",
+                "admission_rate_preference": "any",
+                "salary_preference": "any",
+                "fortune500_preference": "any",
+                "number_of_recommendations": 10
             }
         }
     ]
@@ -138,7 +194,14 @@ def test_additional_scenario():
         "data": {
             "gpa": 3.6,
             "sat": 1350,
-            "program": "Aerospace Aeronautical and Astronautical Engineering"
+            "program": "Aerospace Aeronautical and Astronautical Engineering",
+            "act": 29,
+            "location_preference": "any",
+            "cost_preference": "any",
+            "admission_rate_preference": "any",
+            "salary_preference": "any",
+            "fortune500_preference": "any",
+            "number_of_recommendations": 10
         }
     }
     
@@ -166,4 +229,4 @@ def test_additional_scenario():
 if __name__ == "__main__":
     print("Starting API tests...")
     test_recommendations()
-    test_additional_scenario() 
+    test_additional_scenario()
