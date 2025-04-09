@@ -297,6 +297,35 @@ def test_get_random_recommendation():
         print(f"Fortune 500 Hirers: {', '.join(school['Fortune500_Hirers'][:3])}")
     else:
         print("Fortune 500 Hirers: None")
+        
+    # Display ethnic data
+    print("\nEthnic Enrollment:")
+    if school['White_Enrollment_Percent'] is not None:
+        print(f"White: {school['White_Enrollment_Percent']:.1%}")
+    else:
+        print("White: N/A")
+        
+    if school['Black_Enrollment_Percent'] is not None:
+        print(f"Black: {school['Black_Enrollment_Percent']:.1%}")
+    else:
+        print("Black: N/A")
+        
+    if school['Hispanic_Enrollment_Percent'] is not None:
+        print(f"Hispanic: {school['Hispanic_Enrollment_Percent']:.1%}")
+    else:
+        print("Hispanic: N/A")
+        
+    if school['Asian_Enrollment_Percent'] is not None:
+        print(f"Asian: {school['Asian_Enrollment_Percent']:.1%}")
+    else:
+        print("Asian: N/A")
+        
+    # Display admissions statistics
+    print("\nAdmission Statistics:")
+    if school.get('Admission_Statistics'):
+        print(format_admission_stats(school['Admission_Statistics']))
+    else:
+        print("No admission statistics available")
 
 if __name__ == "__main__":
     test_get_random_recommendation() 

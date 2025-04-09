@@ -35,7 +35,7 @@ def load_admissions_data():
         admissions_data_dict[standard_name_clean][year] = {metric: value, metric2: value2, ...}
     """
     global admissions_data_dict
-    admissions_csv = "admission_trends_cleaned.csv"
+    admissions_csv = "recommendation-algo-2/admission_trends_cleaned.csv"
     if not os.path.exists(admissions_csv):
         print(f"Warning: {admissions_csv} not found, skipping admissions data load.")
         return
@@ -660,7 +660,12 @@ def recommend_schools(
             "LONGITUDE",
             "average_net_price_numeric",
             "tier",
-            "composite_score"
+            "composite_score",
+            "UGDS_WHITE",
+            "UGDS_BLACK",
+            "UGDS_HISP",
+            "UGDS_ASIAN",
+            "UG"
         ]
 
         if any(col not in final_candidates.columns for col in recommended_cols):
@@ -683,7 +688,12 @@ def recommend_schools(
                 "LATITUDE": "Latitude",
                 "LONGITUDE": "Longitude",
                 "average_net_price_numeric": "Avg_Net_Price",
-                "tier": "Recommendation_Tier"
+                "tier": "Recommendation_Tier",
+                "UGDS_WHITE": "White_Enrollment_Percent",
+                "UGDS_BLACK": "Black_Enrollment_Percent",
+                "UGDS_HISP": "Hispanic_Enrollment_Percent",
+                "UGDS_ASIAN": "Asian_Enrollment_Percent",
+                "UG": "Undergraduate_Enrollment"
             },
             inplace=True
         )
@@ -704,7 +714,12 @@ def recommend_schools(
             "Avg_Net_Price",
             "Latitude",
             "Longitude",
-            "school_name_clean"
+            "school_name_clean",
+            "White_Enrollment_Percent",
+            "Black_Enrollment_Percent",
+            "Hispanic_Enrollment_Percent",
+            "Asian_Enrollment_Percent",
+            "Undergraduate_Enrollment"
         ]
         recommendations = recommendations[column_order]
         recommendations.reset_index(drop=True, inplace=True)
@@ -721,3 +736,6 @@ def recommend_schools(
         print(f"Error in recommend_schools: {str(e)}")
         print(f"Traceback: {traceback.format_exc()}")
         raise
+
+# Load admissions data when the module is imported
+load_admissions_data()

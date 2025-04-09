@@ -5,6 +5,7 @@ from typing import List, Optional
 from datetime import datetime
 import os
 import json
+import random
 
 # Bring in our recommendation logic and models
 from services.recommendation_service import recommend_schools, VALID_PROGRAMS
@@ -94,6 +95,8 @@ def clean_for_json(obj):
         if np.isnan(obj) or np.isinf(obj):
             return None
         return float(obj)
+    elif hasattr(obj, 'item'):  # Handle NumPy types
+        return obj.item()
     elif isinstance(obj, (list, tuple)):
         return [clean_for_json(item) for item in obj]
     elif isinstance(obj, dict):
@@ -194,6 +197,18 @@ async def get_random_recommendation(request: RecommendationRequest):
         # Clean the data for JSON serialization
         recommendations_list = clean_for_json(recommendations_list)
 
+        # Debug: print the first item
+        print("\nDebug: First recommendation structure:")
+        if recommendations_list:
+            # Convert NumPy types to Python native types for debugging
+            debug_item = {}
+            for key, value in recommendations_list[0].items():
+                if hasattr(value, 'item'):  # Check if it's a NumPy type
+                    debug_item[key] = value.item()
+                else:
+                    debug_item[key] = value
+            print(json.dumps(debug_item, indent=2))
+
         # Filter for schools with "Target" tier
         target_schools = [school for school in recommendations_list 
                          if "Target" in school.get("Recommendation_Tier", "")]
@@ -203,7 +218,6 @@ async def get_random_recommendation(request: RecommendationRequest):
             target_schools = recommendations_list
             
         # Select a random school from the target schools
-        import random
         random_school = random.choice(target_schools)
 
         # Build our pydantic response with just the single school
