@@ -98,10 +98,12 @@ gunicorn app:app -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
 - `GET /health`: Health check endpoint
 - `GET /programs`: List of available programs
 - `POST /recommendations`: Get university recommendations
+- `POST /random-recommendation`: Get a single random university recommendation
 - `GET /program_coverage`: Get program coverage statistics
 
-## Example Request
+## Example Requests
 
+### Get Multiple Recommendations
 ```bash
 curl -X POST "http://localhost:8000/recommendations" \
      -H "Content-Type: application/json" \
@@ -111,6 +113,33 @@ curl -X POST "http://localhost:8000/recommendations" \
            "program": "Computer Science"
          }'
 ```
+
+### Get Random Recommendation
+```bash
+curl -X POST "http://localhost:8000/random-recommendation" \
+     -H "Content-Type: application/json" \
+     -d '{
+           "gpa": 3.8,
+           "sat": 1450,
+           "program": "Computer Science",
+           "act": 36,
+           "location_preference": "Any",
+           "cost_preference": "Any",
+           "admission_rate_preference": "Any",
+           "salary_preference": "Any",
+           "fortune500_preference": "Any",
+           "number_of_recommendations": 10
+         }'
+```
+
+The random recommendation endpoint accepts additional optional parameters to filter the results:
+- `act`: ACT score (optional)
+- `location_preference`: Preferred location ("Any", "Urban", "Rural", "Suburban")
+- `cost_preference`: Preferred cost range ("Any", "Low", "Medium", "High")
+- `admission_rate_preference`: Preferred admission rate ("Any", "Selective", "Moderate", "Open")
+- `salary_preference`: Preferred salary range ("Any", "Low", "Medium", "High")
+- `fortune500_preference`: Preference for Fortune 500 hiring ("Any", "High", "Medium", "Low")
+- `number_of_recommendations`: Number of recommendations to consider (default: 10)
 
 ## Testing
 
