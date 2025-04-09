@@ -71,4 +71,22 @@ curl -X POST "http://localhost:8000/recommendations" \
   }' \
   > responses/recommendations_ag_business.json
 
+echo "Testing /random-recommendation endpoint with Computer Science..."
+curl -X POST "http://localhost:8000/random-recommendation" \
+  -H "accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "program": "Computer Science",
+    "gpa": 3.8,
+    "sat": 1450,
+    "act": 36,
+    "location_preference": "Any",
+    "cost_preference": "Any",
+    "admission_rate_preference": "Any",
+    "salary_preference": "Any",
+    "fortune500_preference": "Any",
+    "number_of_recommendations": 10
+  }' \
+  > responses/random_recommendation_cs.json
+
 echo "All responses have been saved to the responses directory." 

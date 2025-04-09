@@ -181,15 +181,75 @@ def format_admission_stats(stats):
     
     return "\n".join(formatted)
 
-def display_recommendations():
+def display_recommendations(data):
+    # Prepare data for tabulation
+    table_data = []
+    for school in data['recommendations']:
+        # Get most recent year's admission stats if available
+        recent_stats = school.get('Admission_Statistics', [{}])[0] if school.get('Admission_Statistics') else {}
+        recent_metrics = recent_stats.get('metrics', {}) if recent_stats else {}
+        
+        row = [
+            school['School'],
+            f"${school.get('Median_Earnings_1yr', 'N/A')}",
+            f"${school.get('Median_Earnings_5yr', 'N/A')}",
+            f"{school.get('Avg_GPA', 'N/A'):.2f}" if school.get('Avg_GPA') is not None else 'N/A',
+            str(school.get('Avg_SAT', 'N/A')),
+            f"{school.get('Admission_Rate', 0)*100:.1f}%" if school.get('Admission_Rate') else 'N/A',
+            f"${school.get('Avg_Net_Price', 'N/A')}" if school.get('Avg_Net_Price') else 'N/A',
+            str(school.get('Total_Enrollment', 'N/A')),
+            len(school.get('Fortune500_Hirers', [])),
+            str(school.get('Undergraduate_Enrollment', 'N/A')),
+            f"{school.get('White_Enrollment_Percent', 0)*100:.1f}%" if school.get('White_Enrollment_Percent') else 'N/A',
+            f"{school.get('Black_Enrollment_Percent', 0)*100:.1f}%" if school.get('Black_Enrollment_Percent') else 'N/A',
+            f"{school.get('Hispanic_Enrollment_Percent', 0)*100:.1f}%" if school.get('Hispanic_Enrollment_Percent') else 'N/A',
+            f"{school.get('Asian_Enrollment_Percent', 0)*100:.1f}%" if school.get('Asian_Enrollment_Percent') else 'N/A',
+            # Add most recent year's admission stats
+            recent_stats.get('year', 'N/A'),
+            f"{recent_metrics.get('percent_applicants_admitted', 0)*100:.1f}%" if recent_metrics.get('percent_applicants_admitted') else 'N/A'
+        ]
+        table_data.append(row)
+    
+    # Print the table
+    headers = [
+        'School', '1yr $', '5yr $', 'GPA', 'SAT', 'Admit%', 'Net$', 'Total', 'F500', 
+        'UG', 'White%', 'Black%', 'Hisp%', 'Asian%', 'Year', 'Admit%'
+    ]
+    print("\n=== School Recommendations ===")
+    print(tabulate(table_data, headers=headers, tablefmt='grid'))
+
+def test_get_recommendations():
+    test_data = {
+        "gpa": 3.8,
+        "sat": 1450,
+        "program": "Computer Science"
+    }
+    response = requests.post("/recommendations", json=test_data)
+    assert response.status_code == 200
+    data = response.json()
+    assert "recommendations" in data
+    assert "timestamp" in data
+    assert "total_schools" in data
+
+def test_get_random_recommendation():
+    print("\nTesting random recommendation endpoint...")
+    test_data = {
+        "gpa": 3.8,
+        "sat": 1450,
+        "program": "Computer Science",
+        "act": 36,
+        "location_preference": "Any",
+        "cost_preference": "Any",
+        "admission_rate_preference": "Any",
+        "salary_preference": "Any",
+        "fortune500_preference": "Any",
+        "number_of_recommendations": 10
+    }
+    
     # Make the API request
     response = requests.post(
-        "http://127.0.0.1:8000/recommendations",
-        json={
-            "gpa": 3.5,
-            "sat": 1400,
-            "program": "Computer Science"
-        }
+        "http://127.0.0.1:8000/random-recommendation",
+        json=test_data
     )
     
     try:
@@ -201,50 +261,42 @@ def display_recommendations():
         
     data = response.json()
     
-    print("\nStarting API visualization...")
-    print("\n=== API Response Summary ===")
-    print(f"Total Schools: {data['total_schools']}")
-    print(f"Timestamp: {data['timestamp']}")
+    # Verify we got exactly one school
+    assert len(data["recommendations"]) == 1, f"Expected 1 school, got {len(data['recommendations'])}"
+    assert data["total_schools"] == 1, f"Expected total_schools to be 1, got {data['total_schools']}"
     
-    # Prepare data for tabulation
-    table_data = []
-    for school in data['recommendations']:
-        row = [
-            school['School'],
-            school.get('1yr_Earnings', 'N/A'),
-            school.get('5yr_Earnings', 'N/A'),
-            school.get('Avg_GPA', 'N/A'),
-            school.get('Avg_SAT', 'N/A'),
-            school.get('Admission_Rate', 'N/A'),
-            school.get('Net_Price', 'N/A'),
-            school.get('Enrollment', 'N/A'),
-            school.get('Fortune500_Hirers', 0),
-            # Add demographic information
-            school.get('Undergraduate_Enrollment', 'N/A'),
-            f"{school.get('White_Enrollment_Percent', 'N/A')}%",
-            f"{school.get('Black_Enrollment_Percent', 'N/A')}%",
-            f"{school.get('Hispanic_Enrollment_Percent', 'N/A')}%",
-            f"{school.get('Asian_Enrollment_Percent', 'N/A')}%"
-        ]
-        table_data.append(row)
+    # Display the single random school
+    school = data["recommendations"][0]
+    print("\nRandom School Recommendation:")
+    print(f"School: {school['School']}")
+    print(f"Tier: {school['Recommendation_Tier']}")
+    print(f"GPA/SAT: {school['Avg_GPA']}/{school['Avg_SAT']}")
     
-    # Print the table
-    print("\n=== Consider Match ===")
-    print(tabulate(
-        table_data,
-        headers=['School', '1yr Earnings', '5yr Earnings', 'Avg GPA', 'Avg SAT', 'Admit Rate', 'Net Price', 'Enrollment', 'Fortune 500', 'UG Enrollment', 'White %', 'Black %', 'Hispanic %', 'Asian %'],
-        tablefmt='grid'
-    ))
-    
-    # Print admission statistics if available
-    print("\nAdmission Statistics:")
-    for school in data['recommendations']:
-        print(f"\n{school['School']} — {school['Recommendation_Tier']}")
-        if 'Admission_Statistics' in school and school['Admission_Statistics']:
-            stats = format_admission_stats(school['Admission_Statistics'])
-            print(stats)
-        else:
-            print("No admission statistics available")
+    # Handle potentially missing data
+    if school['Median_Earnings_1yr'] is not None:
+        print(f"1yr Earnings: ${school['Median_Earnings_1yr']:,.0f}")
+    else:
+        print("1yr Earnings: N/A")
+        
+    if school['Median_Earnings_5yr'] is not None:
+        print(f"5yr Earnings: ${school['Median_Earnings_5yr']:,.0f}")
+    else:
+        print("5yr Earnings: N/A")
+        
+    if school['Admission_Rate'] is not None:
+        print(f"Admission Rate: {school['Admission_Rate']:.1%}")
+    else:
+        print("Admission Rate: N/A")
+        
+    if school['Avg_Net_Price'] is not None:
+        print(f"Net Price: ${school['Avg_Net_Price']:,.0f}")
+    else:
+        print("Net Price: N/A")
+        
+    if school['Fortune500_Hirers']:
+        print(f"Fortune 500 Hirers: {', '.join(school['Fortune500_Hirers'][:3])}")
+    else:
+        print("Fortune 500 Hirers: None")
 
 if __name__ == "__main__":
-    display_recommendations() 
+    test_get_random_recommendation() 

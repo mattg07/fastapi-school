@@ -6,6 +6,7 @@ from datetime import datetime
 import os
 import json
 
+# Bring in our recommendation logic and models
 from services.recommendation_service import recommend_schools, VALID_PROGRAMS
 
 import pandas as pd
@@ -38,6 +39,13 @@ class RecommendationRequest(BaseModel):
     gpa: float
     sat: int
     program: str
+    act: float
+    location_preference: str
+    cost_preference: str
+    admission_rate_preference: str
+    salary_preference: str
+    fortune500_preference: str
+    number_of_recommendations: int
 
 class AdmissionMetrics(BaseModel):
     metric: str
@@ -78,7 +86,10 @@ class RecommendationResponse(BaseModel):
 # =====================================================
 
 def clean_for_json(obj):
-    """Clean data for JSON serialization by handling out-of-range float values."""
+    """
+    Clean data for JSON serialization by handling out-of-range float values
+    (NaN, inf) and by recursively cleaning lists / dicts.
+    """
     if isinstance(obj, float):
         if np.isnan(obj) or np.isinf(obj):
             return None
@@ -93,47 +104,113 @@ def clean_for_json(obj):
 # Endpoints
 # =====================================================
 
-@app.post("/recommendations", response_model=RecommendationResponse)
+@app.post("/recommendations")
 async def get_recommendations(request: RecommendationRequest):
     """
     Generates a list of recommended schools based on the user's GPA, SAT, and program.
+    Includes newly added admissions statistics from 'admission_trends_cleaned.csv'.
     """
     try:
-        recommendations_list = recommend_schools(
-            user_gpa=request.gpa,
-            user_sat=request.sat,
-            user_program=request.program,
-            verbose=True  # Enable verbose output
+        # -- Call our recommendation logic --
+        df_recommendations = recommend_schools(
+            program=request.program,
+            gpa=request.gpa,
+            sat=request.sat,
+            act=request.act,
+            location_preference=request.location_preference,
+            cost_preference=request.cost_preference,
+            admission_rate_preference=request.admission_rate_preference,
+            salary_preference=request.salary_preference,
+            fortune500_preference=request.fortune500_preference,
+            number_of_recommendations=request.number_of_recommendations
         )
-        
-        if not recommendations_list:
+
+        # If DataFrame is empty or None, return 404
+        if df_recommendations is None or df_recommendations.empty:
             raise HTTPException(
                 status_code=404,
                 detail=f"No recommendations found for program: {request.program}"
             )
-        
+
+        # Convert DataFrame to list of dicts
+        recommendations_list = df_recommendations.to_dict(orient="records")
+
         # Clean the data for JSON serialization
         recommendations_list = clean_for_json(recommendations_list)
-        
-        # Print debug information
+
+        # Debug: print the first item
         print("\nDebug: First recommendation structure:")
         if recommendations_list:
             print(json.dumps(recommendations_list[0], indent=2))
-        
+
+        # Build our pydantic response
         return RecommendationResponse(
             recommendations=recommendations_list,
-            timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            timestamp=datetime.now().isoformat(),
             total_schools=len(recommendations_list)
         )
-        
+
     except Exception as e:
         import traceback
         print(f"\nError details: {str(e)}")
-        print(f"Error type: {type(e)}")
         print(f"Traceback:\n{traceback.format_exc()}")
         raise HTTPException(
             status_code=500,
             detail=f"Error generating recommendations: {str(e)}\n{traceback.format_exc()}"
+        )
+
+@app.post("/random-recommendation")
+async def get_random_recommendation(request: RecommendationRequest):
+    """
+    Generates a single random school recommendation based on the user's GPA, SAT, and program.
+    Uses the same filtering logic as the main recommendations endpoint but returns only one random school.
+    """
+    try:
+        # -- Call our recommendation logic --
+        df_recommendations = recommend_schools(
+            program=request.program,
+            gpa=request.gpa,
+            sat=request.sat,
+            act=request.act,
+            location_preference=request.location_preference,
+            cost_preference=request.cost_preference,
+            admission_rate_preference=request.admission_rate_preference,
+            salary_preference=request.salary_preference,
+            fortune500_preference=request.fortune500_preference,
+            number_of_recommendations=request.number_of_recommendations
+        )
+
+        # If DataFrame is empty or None, return 404
+        if df_recommendations is None or df_recommendations.empty:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No recommendations found for program: {request.program}"
+            )
+
+        # Convert DataFrame to list of dicts
+        recommendations_list = df_recommendations.to_dict(orient="records")
+
+        # Clean the data for JSON serialization
+        recommendations_list = clean_for_json(recommendations_list)
+
+        # Select a random school from the recommendations
+        import random
+        random_school = random.choice(recommendations_list)
+
+        # Build our pydantic response with just the single school
+        return RecommendationResponse(
+            recommendations=[random_school],
+            timestamp=datetime.now().isoformat(),
+            total_schools=1
+        )
+
+    except Exception as e:
+        import traceback
+        print(f"\nError details: {str(e)}")
+        print(f"Traceback:\n{traceback.format_exc()}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generating random recommendation: {str(e)}\n{traceback.format_exc()}"
         )
 
 @app.get("/programs")
@@ -151,6 +228,7 @@ async def root():
         "version": "1.0.0",
         "endpoints": {
             "recommendations": "/recommendations (POST)",
+            "random-recommendation": "/random-recommendation (POST)",
             "programs": "/programs (GET)"
         }
     }
@@ -161,8 +239,6 @@ def get_program_coverage():
     Return a count of how many schools match each program in programs_cleaned.csv.
     Great for diagnosing programs with very few or zero matches.
     """
-    import pandas as pd
-
     path_colleges = "recommendation-algo-2/colleges_data_cleaned.csv"
     path_programs = "recommendation-algo-2/programs_cleaned.csv"
     path_school_sup = "recommendation-algo-2/school_sup_data_cleaned.csv"
@@ -179,7 +255,6 @@ def get_program_coverage():
     df_programs = pd.read_csv(path_programs)
     df_school_sup = pd.read_csv(path_school_sup)
 
-    # Normalize merge keys
     df_colleges["name_clean"] = df_colleges["name"].str.lower().str.strip()
     if "standard_college" in df_programs.columns:
         df_programs["school_name_clean"] = df_programs["standard_college"].str.lower().str.strip()
@@ -189,7 +264,6 @@ def get_program_coverage():
 
     coverage_dict = {}
     zero_match_programs = []
-
     all_programs = sorted(df_programs["program"].unique().tolist())
 
     for prog_name in all_programs:
@@ -226,4 +300,4 @@ async def health_check():
         "status": "healthy",
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "version": "1.0.0"
-    } 
+    }

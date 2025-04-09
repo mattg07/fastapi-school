@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from typing import Optional
 from datetime import datetime
+import traceback
 
 # ===================================================================================
 # All recommendation logic and helper functions that were previously in app.py
@@ -21,6 +22,66 @@ def load_valid_programs():
         return []
 
 VALID_PROGRAMS = load_valid_programs()
+
+# -----------------------------------------------------
+# Global dictionary to store admissions data by school
+# -----------------------------------------------------
+admissions_data_dict = {}
+
+def load_admissions_data():
+    """
+    Load the admissions data from 'admission_trends_cleaned.csv'.
+    Build a nested dictionary:
+        admissions_data_dict[standard_name_clean][year] = {metric: value, metric2: value2, ...}
+    """
+    global admissions_data_dict
+    admissions_csv = "admission_trends_cleaned.csv"
+    if not os.path.exists(admissions_csv):
+        print(f"Warning: {admissions_csv} not found, skipping admissions data load.")
+        return
+
+    try:
+        df_ad = pd.read_csv(admissions_csv)
+        df_ad["Standard_Name_clean"] = df_ad["Standard_Name"].str.lower().str.strip()
+        data_dict = {}
+
+        # Group rows by (standard_name_clean, year) to collect metrics
+        grouped = df_ad.groupby(["Standard_Name_clean", "Year"])
+        for (std_name_clean, year), group_df in grouped:
+            if std_name_clean not in data_dict:
+                data_dict[std_name_clean] = {}
+            if year not in data_dict[std_name_clean]:
+                data_dict[std_name_clean][year] = {}
+
+            for _, row in group_df.iterrows():
+                metric = row["Metric"]
+                value = row["Value"]
+                data_dict[std_name_clean][year][metric] = value
+
+        admissions_data_dict = data_dict
+        print("Admissions data loaded into admissions_data_dict.")
+
+    except Exception as ex:
+        print(f"Error loading admissions data: {ex}")
+
+def get_admission_statistics(std_name_clean: str):
+    """
+    Given a school's lowercased name (school_name_clean),
+    return a list of { 'year': int, 'metrics': {...} } for each available year.
+    """
+    if std_name_clean in admissions_data_dict:
+        stats_list = []
+        for year in sorted(admissions_data_dict[std_name_clean].keys()):
+            metrics = admissions_data_dict[std_name_clean][year]
+            stats_list.append({
+                "year": year,
+                "metrics": metrics
+            })
+        return stats_list
+    return []
+
+# Attempt to load admissions data at import time
+load_admissions_data()
 
 def find_program(program: str) -> Optional[str]:
     """Find the exact program name from the list of valid programs or suggest the closest match."""
@@ -84,19 +145,17 @@ def parse_dollar_amount(x):
     except:
         return np.nan
 
-def numeric_or_none(value):
-    """Convert a value to float if possible, otherwise return None."""
-    if pd.isnull(value):
-        return None
-    try:
-        return float(value)
-    except (ValueError, TypeError):
-        return None
-
 def recommend_schools(
-    user_gpa: float,
-    user_sat: int,
-    user_program: str,
+    program: str,
+    gpa: float,
+    sat: int,
+    act: float,
+    location_preference: str,
+    cost_preference: str,
+    admission_rate_preference: str,
+    salary_preference: str,
+    fortune500_preference: str,
+    number_of_recommendations: int,
     path_colleges: str = "recommendation-algo-2/colleges_data_cleaned.csv",
     path_programs: str = "recommendation-algo-2/programs_cleaned.csv",
     path_school_sup: str = "recommendation-algo-2/school_sup_data_cleaned.csv",
@@ -105,14 +164,14 @@ def recommend_schools(
 ):
     """
     Main function to generate a recommendations DataFrame for the given user inputs.
-    The approach merges multiple CSV files, applies a variety of transformations,
-    calculates tiers, fallback logic, etc., and returns a final DataFrame ready for output.
+    The approach merges multiple CSV files, applies transformations, calculates tiers,
+    fallback logic, etc., and returns a final DataFrame ready for output.
     """
-
-    import traceback
-
     try:
-        # 1) Determine the exact program name
+        user_program = program
+        user_gpa = gpa
+        user_sat = sat
+
         exact_program = find_program(user_program)
         if exact_program is None:
             raise ValueError(f"Invalid program name: '{user_program}'. Please use one of the valid program names.")
@@ -126,39 +185,10 @@ def recommend_schools(
             print(f"- {path_school_sup}: {os.path.exists(path_school_sup)}")
             print(f"- {path_companies}: {os.path.exists(path_companies)}")
 
-        # 2) Load CSV data
         df_colleges = pd.read_csv(path_colleges)
         df_programs = pd.read_csv(path_programs)
         df_school_sup = pd.read_csv(path_school_sup)
         df_companies = pd.read_csv(path_companies)
-
-        # =========== NEW CODE: Load admissions CSV ===============
-        path_admissions = "recommendation-algo-2/admission_trends_cleaned.csv"
-        df_admissions = pd.DataFrame()
-        if os.path.exists(path_admissions):
-            try:
-                df_admissions = pd.read_csv(path_admissions)
-                # Clean the standard name to match our other data
-                df_admissions["standard_name_clean"] = df_admissions["Standard_Name"].str.lower().str.strip()
-                
-                # Convert the data to the format we need
-                df_admissions = df_admissions.pivot_table(
-                    index=['standard_name_clean', 'Year'],
-                    columns='Metric',
-                    values='Value',
-                    aggfunc='first'
-                ).reset_index()
-                
-                # Rename columns to match our expected format
-                df_admissions.columns = [col.lower().replace(' ', '_') for col in df_admissions.columns]
-                
-                if verbose:
-                    print(f"Loaded admissions data: {len(df_admissions)} rows")
-                    print(f"Sample metrics: {df_admissions.columns.tolist()}")
-            except Exception as e:
-                print(f"Warning: Error loading admission trends: {str(e)}")
-                df_admissions = pd.DataFrame()
-        # =========== END NEW CODE ================================
 
         if verbose:
             print("Loaded data files:")
@@ -167,11 +197,9 @@ def recommend_schools(
             print(f"- School Sup: {len(df_school_sup)} rows")
             print(f"- Companies: {len(df_companies)} rows")
 
-        # Basic numeric conversions
         df_colleges["average_sat_composite"] = pd.to_numeric(df_colleges["average_sat_composite"], errors="coerce")
         df_school_sup["SAT_AVG"] = pd.to_numeric(df_school_sup["SAT_AVG"], errors="coerce")
 
-        # Normalize merge keys
         df_colleges["name_clean"] = df_colleges["name"].str.lower().str.strip()
         if "standard_college" in df_programs.columns:
             df_programs["school_name_clean"] = df_programs["standard_college"].str.lower().str.strip()
@@ -179,7 +207,6 @@ def recommend_schools(
             df_programs["school_name_clean"] = df_programs["name"].str.lower().str.strip()
         df_school_sup["school_name_clean"] = df_school_sup["INSTNM"].str.lower().str.strip()
 
-        # Build a lookup for Fortune 500 company hires
         school_cols = [col for col in df_companies.columns if col.startswith("school_")]
         school_to_companies = {}
         for idx, row in df_companies.iterrows():
@@ -192,7 +219,6 @@ def recommend_schools(
                         school_to_companies[school_clean] = set()
                     school_to_companies[school_clean].add(company_name)
 
-        # Filter programs by the exact matched program
         df_prog_filtered = df_programs[df_programs["program"] == exact_program]
 
         if verbose:
@@ -204,7 +230,6 @@ def recommend_schools(
                 print(f"No schools found offering program '{exact_program}'.")
             return pd.DataFrame()
 
-        # 3) Merge program data with colleges
         merged = pd.merge(
             df_prog_filtered,
             df_colleges,
@@ -218,11 +243,9 @@ def recommend_schools(
             print(f"Rows after first merge with colleges: {len(merged)}")
             print(f"Columns now: {merged.columns.tolist()}")
 
-        # Attempt to rename if "name_col" is present
         if "name_col" in merged.columns:
             merged.rename(columns={"name_col": "name"}, inplace=True)
 
-        # 4) Merge with school_sup
         merged = pd.merge(
             merged,
             df_school_sup,
@@ -252,7 +275,6 @@ def recommend_schools(
                 print("Error: Could not find 'name' column after merges.")
             return pd.DataFrame()
 
-        # Combine SAT columns
         def get_sat_value(row):
             if pd.notnull(row["average_sat_composite"]):
                 return row["average_sat_composite"]
@@ -260,7 +282,6 @@ def recommend_schools(
 
         merged["sat_combined"] = merged.apply(get_sat_value, axis=1)
 
-        # Define tier logic
         def gpa_tier(row):
             if pd.isnull(row["average_gpa"]):
                 return None
@@ -305,10 +326,9 @@ def recommend_schools(
                 return None
 
         merged["tier"] = merged.apply(get_combined_tier, axis=1)
-
         final_candidates = merged[merged["tier"].notnull()].copy()
+
         if final_candidates.empty:
-            # fallback if no immediate matches
             fallback_pool = merged.copy()
             fallback_pool["data_score"] = (
                 fallback_pool["earn_mdn_1yr"].notna().astype(int) +
@@ -322,34 +342,29 @@ def recommend_schools(
             fallback_top["tier"] = "Suggested (Fallback)"
             final_candidates = fallback_top
 
-        # parse acceptance rate & net price
         final_candidates["acceptance_rate_numeric"] = final_candidates["acceptance_rate"].apply(parse_accept_rate)
         final_candidates["average_net_price_numeric"] = final_candidates["average_net_price"].apply(parse_dollar_amount)
         final_candidates["earn_mdn_1yr_num"] = final_candidates["earn_mdn_1yr"].apply(numeric_or_nan)
         final_candidates["earn_mdn_5yr_num"] = final_candidates["earn_mdn_5yr"].apply(numeric_or_nan)
 
         def get_companies_for_school(row):
-            school_name_clean = row["name_clean"]
+            school_name_clean = row["school_name_clean"]
             return list(school_to_companies.get(school_name_clean, []))
 
         final_candidates["fortune_500_companies"] = final_candidates.apply(get_companies_for_school, axis=1)
 
-        # academic distance and scoring
         def calculate_academic_distance(row, user_gpa, user_sat):
             gpa_distance = 0.0
             sat_distance = 0.0
             count = 0
-
             if pd.notnull(row["average_gpa"]) and pd.notnull(user_gpa):
                 gpa_diff = abs(row["average_gpa"] - user_gpa)
                 gpa_distance = gpa_diff / 4.0
                 count += 1
-
             if pd.notnull(row["sat_combined"]) and pd.notnull(user_sat):
                 sat_diff = abs(row["sat_combined"] - user_sat)
                 sat_distance = sat_diff / 1600.0
                 count += 1
-
             if count == 0:
                 return None
             return (gpa_distance + sat_distance) / count
@@ -359,10 +374,8 @@ def recommend_schools(
             earnings_5yr = row["earn_mdn_5yr_num"] if pd.notnull(row["earn_mdn_5yr_num"]) else 0
             max_1yr = final_candidates["earn_mdn_1yr_num"].max() or 1
             max_5yr = final_candidates["earn_mdn_5yr_num"].max() or 1
-
             score_1yr = earnings_1yr / max_1yr if max_1yr > 0 else 0
             score_5yr = earnings_5yr / max_5yr if max_5yr > 0 else 0
-
             if earnings_1yr > 0 and earnings_5yr > 0:
                 return (0.4 * score_1yr + 0.6 * score_5yr)
             elif earnings_1yr > 0:
@@ -406,15 +419,12 @@ def recommend_schools(
             has_academic_data = pd.notnull(row["academic_distance"])
             has_earnings = pd.notnull(row["earnings_score"])
             data_score = row["data_completeness"]
-
             if data_score < 0.2:
                 return "Option (Limited Data)"
-
             if has_academic_data:
                 combined_distance = row["combined_distance"]
                 if pd.isnull(combined_distance):
                     return "Option"
-
                 if combined_distance <= 0.05:
                     prefix = "Strong"
                 elif combined_distance <= 0.1:
@@ -423,7 +433,6 @@ def recommend_schools(
                     prefix = "Potential"
                 else:
                     prefix = "Consider"
-
                 if has_earnings and row["earnings_score"] > 0.7:
                     return f"{prefix} Match (High Earnings)"
                 elif has_earnings and row["earnings_score"] > 0.4:
@@ -446,27 +455,21 @@ def recommend_schools(
             earnings_weight = 0.3
             completeness_weight = 0.2
             selectivity_weight = 0.1
-
             base_score = 0.1
             scores = [base_score]
             weights = [0.1]
-
             if pd.notnull(row["academic_distance"]):
                 scores.append(1 - row["academic_distance"])
                 weights.append(academic_weight)
-
             if pd.notnull(row["earnings_score"]):
                 scores.append(row["earnings_score"])
                 weights.append(earnings_weight)
-
             scores.append(row["data_completeness"])
             weights.append(completeness_weight)
-
             if pd.notnull(row["selectivity_distance"]):
                 penalty_value = -min(row["selectivity_distance"], 1.0)
                 scores.append(penalty_value)
                 weights.append(selectivity_weight)
-
             total_weight = sum(weights)
             normalized_weights = [w / total_weight for w in weights]
             return sum(s * w for s, w in zip(scores, normalized_weights))
@@ -479,13 +482,10 @@ def recommend_schools(
         final_candidates["composite_score"] = final_candidates.apply(calculate_composite_score, axis=1)
         final_candidates["composite_score"] = final_candidates.apply(adjust_composite_score, axis=1)
         final_candidates = final_candidates.sort_values(by=["composite_score", "data_completeness"], ascending=[False, False])
-
         final_candidates["tier"] = final_candidates.apply(assign_tier, axis=1)
 
-        # fallback if fewer than 10:
         min_required = 10
         count_final = len(final_candidates)
-
         if count_final < min_required:
             fallback_pool = merged.copy()
             fallback_pool = fallback_pool[~fallback_pool.index.isin(final_candidates.index)]
@@ -527,7 +527,6 @@ def recommend_schools(
             for col in missing_columns:
                 fallback_slice[col] = None
             fallback_slice = fallback_slice[final_candidates.columns]
-
             final_candidates = pd.concat([final_candidates, fallback_slice], ignore_index=True)
 
             if verbose:
@@ -535,43 +534,24 @@ def recommend_schools(
 
         final_candidates["number_of_students"] = final_candidates["number_of_students"].apply(parse_enrollment)
 
-        # =========== NEW CODE: Match each recommended school with its admission data ===============
-        def gather_admission_stats(school_clean):
-            """
-            Return a list of {'metric', 'year', 'value'} rows for the given school,
-            sorted by 'year' descending so you can track the evolution easily.
-            """
-            if df_admissions.empty or not isinstance(school_clean, str):
-                return []
-            matched = df_admissions[df_admissions["standard_name_clean"] == school_clean]
-
-            # Sort by descending year (note: column is lowercase)
-            matched = matched.sort_values(by="year", ascending=False)
-
-            stats_list = []
-            for _, row_adm in matched.iterrows():
-                year_stats = {
-                    "year": int(row_adm["year"]),
-                    "metrics": {}
-                }
-                for col in matched.columns:
-                    if col not in ["standard_name_clean", "year"]:
-                        value = row_adm[col]
-                        if pd.notnull(value):
-                            year_stats["metrics"][col] = float(value)
-                if year_stats["metrics"]:
-                    stats_list.append(year_stats)
-            return stats_list
-
-        # We'll create a new column in final_candidates with the admission stats
-        final_candidates["admission_statistics"] = final_candidates["name_clean"].apply(gather_admission_stats)
-        # =========== END NEW CODE ==================================================================
-
+        # --------------------------------------------------------
+        # Include 'school_name_clean' so we can attach admissions
+        # --------------------------------------------------------
         recommended_cols = [
-            "name", "average_gpa", "average_sat_composite", "earn_mdn_1yr_num", "earn_mdn_5yr_num",
-            "fortune_500_companies", "number_of_students", "acceptance_rate_numeric", "LATITUDE",
-            "LONGITUDE", "average_net_price_numeric", "tier", "composite_score",
-            "admission_statistics"
+            "school_name_clean",
+            "name",
+            "average_gpa",
+            "average_sat_composite",
+            "earn_mdn_1yr_num",
+            "earn_mdn_5yr_num",
+            "fortune_500_companies",
+            "number_of_students",
+            "acceptance_rate_numeric",
+            "LATITUDE",
+            "LONGITUDE",
+            "average_net_price_numeric",
+            "tier",
+            "composite_score"
         ]
 
         if any(col not in final_candidates.columns for col in recommended_cols):
@@ -580,6 +560,7 @@ def recommend_schools(
             return pd.DataFrame()
 
         recommendations = final_candidates[recommended_cols].copy()
+
         recommendations.rename(
             columns={
                 "name": "School",
@@ -593,8 +574,7 @@ def recommend_schools(
                 "LATITUDE": "Latitude",
                 "LONGITUDE": "Longitude",
                 "average_net_price_numeric": "Avg_Net_Price",
-                "tier": "Recommendation_Tier",
-                "admission_statistics": "Admission_Statistics"
+                "tier": "Recommendation_Tier"
             },
             inplace=True
         )
@@ -602,85 +582,33 @@ def recommend_schools(
         recommendations["Has_Salary_Data"] = recommendations["Median_Earnings_1yr"].notna()
 
         column_order = [
-            "School", "Recommendation_Tier", "Has_Salary_Data", "Median_Earnings_1yr",
-            "Median_Earnings_5yr", "Avg_GPA", "Avg_SAT", "Fortune500_Hirers",
-            "Total_Enrollment", "Admission_Rate", "Avg_Net_Price", "Latitude",
-            "Longitude"
+            "School",
+            "Recommendation_Tier",
+            "Has_Salary_Data",
+            "Median_Earnings_1yr",
+            "Median_Earnings_5yr",
+            "Avg_GPA",
+            "Avg_SAT",
+            "Fortune500_Hirers",
+            "Total_Enrollment",
+            "Admission_Rate",
+            "Avg_Net_Price",
+            "Latitude",
+            "Longitude",
+            "school_name_clean"
         ]
         recommendations = recommendations[column_order]
         recommendations.reset_index(drop=True, inplace=True)
 
-        # After merging with school_sup, merge with admissions data
-        if not df_admissions.empty:
-            try:
-                merged = pd.merge(
-                    merged,
-                    df_admissions,
-                    left_on="school_name_clean",
-                    right_on="standard_name_clean",
-                    how="left"
-                )
-            except Exception as e:
-                print(f"Warning: Error merging admission data: {str(e)}")
-
-        # Create recommendations list
-        recommendations = []
-        for _, row in merged.iterrows():
-            school_data = {
-                "School": str(row["name"]),
-                "Recommendation_Tier": str(row["tier"]),
-                "Has_Salary_Data": bool(pd.notnull(row.get("earn_mdn_1yr")) or pd.notnull(row.get("earn_mdn_5yr"))),
-                "Median_Earnings_1yr": numeric_or_none(row.get("earn_mdn_1yr")),
-                "Median_Earnings_5yr": numeric_or_none(row.get("earn_mdn_5yr")),
-                "Avg_GPA": numeric_or_none(row.get("average_gpa")),
-                "Avg_SAT": numeric_or_none(row.get("average_sat_composite")),
-                "Fortune500_Hirers": list(school_to_companies.get(str(row["name_clean"]), set())),
-                "Total_Enrollment": int(row["total_enrollment"]) if pd.notnull(row.get("total_enrollment")) else None,
-                "Admission_Rate": numeric_or_none(row.get("acceptance_rate_numeric")),
-                "Avg_Net_Price": numeric_or_none(row.get("average_net_price_numeric")),
-                "Latitude": numeric_or_none(row.get("LATITUDE")),
-                "Longitude": numeric_or_none(row.get("LONGITUDE")),
-                # Add demographic fields
-                "Undergraduate_Enrollment": int(row["UG"]) if pd.notnull(row.get("UG")) else None,
-                "White_Enrollment_Percent": numeric_or_none(row.get("UGDS_WHITE")),
-                "Black_Enrollment_Percent": numeric_or_none(row.get("UGDS_BLACK")),
-                "Hispanic_Enrollment_Percent": numeric_or_none(row.get("UGDS_HISP")),
-                "Asian_Enrollment_Percent": numeric_or_none(row.get("UGDS_ASIAN"))
-            }
-            
-            # Add admission statistics if available
-            if not df_admissions.empty:
-                try:
-                    stats = []
-                    school_admissions = df_admissions[df_admissions["standard_name_clean"] == str(row["name_clean"])]
-                    
-                    for _, adm_row in school_admissions.iterrows():
-                        year_stats = {
-                            "year": int(adm_row["year"]),
-                            "metrics": {}
-                        }
-                        
-                        for col in school_admissions.columns:
-                            if col not in ["standard_name_clean", "year"]:
-                                value = adm_row[col]
-                                if pd.notnull(value):
-                                    converted_value = numeric_or_none(value)
-                                    if converted_value is not None:
-                                        year_stats["metrics"][col] = converted_value
-                        
-                        if year_stats["metrics"]:
-                            stats.append(year_stats)
-                    
-                    if stats:
-                        school_data["Admission_Statistics"] = sorted(stats, key=lambda x: x["year"], reverse=True)
-                except Exception as e:
-                    print(f"Warning: Error processing admission stats for {row['name']}: {str(e)}")
-            
-            recommendations.append(school_data)
+        # --------------------------------------------------------
+        # Attach admissions data to each school
+        # --------------------------------------------------------
+        recommendations["Admission_Statistics"] = recommendations["school_name_clean"].apply(get_admission_statistics)
+        recommendations.drop(columns=["school_name_clean"], inplace=True)
 
         return recommendations
 
     except Exception as e:
         print(f"Error in recommend_schools: {str(e)}")
         print(f"Traceback: {traceback.format_exc()}")
-        raise 
+        raise
