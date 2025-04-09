@@ -163,7 +163,7 @@ async def get_recommendations(request: RecommendationRequest):
 async def get_random_recommendation(request: RecommendationRequest):
     """
     Generates a single random school recommendation based on the user's GPA, SAT, and program.
-    Uses the same filtering logic as the main recommendations endpoint but returns only one random school.
+    Specifically returns a school classified as "Target" to provide a balanced recommendation.
     """
     try:
         # -- Call our recommendation logic --
@@ -194,9 +194,17 @@ async def get_random_recommendation(request: RecommendationRequest):
         # Clean the data for JSON serialization
         recommendations_list = clean_for_json(recommendations_list)
 
-        # Select a random school from the recommendations
+        # Filter for schools with "Target" tier
+        target_schools = [school for school in recommendations_list 
+                         if "Target" in school.get("Recommendation_Tier", "")]
+        
+        # If no target schools found, fall back to all recommendations
+        if not target_schools:
+            target_schools = recommendations_list
+            
+        # Select a random school from the target schools
         import random
-        random_school = random.choice(recommendations_list)
+        random_school = random.choice(target_schools)
 
         # Build our pydantic response with just the single school
         return RecommendationResponse(
