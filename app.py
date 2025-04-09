@@ -177,7 +177,8 @@ async def get_random_recommendation(request: RecommendationRequest):
             admission_rate_preference=request.admission_rate_preference,
             salary_preference=request.salary_preference,
             fortune500_preference=request.fortune500_preference,
-            number_of_recommendations=request.number_of_recommendations
+            number_of_recommendations=request.number_of_recommendations,
+            is_random=True
         )
 
         # If DataFrame is empty or None, return 404
