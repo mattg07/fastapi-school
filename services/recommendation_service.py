@@ -707,22 +707,26 @@ def recommend_schools(
         recommendations["Avg_GPA"] = merged_df["Avg_GPA_School"]
         recommendations["Avg_SAT"] = merged_df["Avg_SAT_School"]
         
-        # Fortune 500 Hirers (as List[str] for Pydantic model compatibility)
-        def get_f500_company_names(sc_name_clean_lookup):
-            # Gets Dict[company, count] then extracts List[company_name]
+        # Fortune 500 Hirers (as List[Dict[str, Any]] to include counts)
+        def get_f500_hirer_details(sc_name_clean_lookup):
             companies_with_counts = SCHOOL_TO_COMPANIES.get(sc_name_clean_lookup, {})
-            return sorted(list(companies_with_counts.keys()))
+            hirer_list = []
+            for company, count in companies_with_counts.items():
+                hirer_list.append({"company_name": company, "alumni_count": count})
+            # Sort by company name for consistent output, or by count if preferred
+            return sorted(hirer_list, key=lambda x: x["company_name"])
         
         if 'school_name_clean' in merged_df.columns:
-            recommendations["Fortune500_Hirers"] = merged_df["school_name_clean"].apply(get_f500_company_names)
+            recommendations["Fortune500_Hirers"] = merged_df["school_name_clean"].apply(get_f500_hirer_details)
             if verbose:
-                total_hirer_names = recommendations["Fortune500_Hirers"].apply(len).sum()
-                if total_hirer_names == 0 and len(SCHOOL_TO_COMPANIES) > 0:
-                    print("Debug: Fortune500_Hirers (names list) is all empty, but SCHOOL_TO_COMPANIES is populated.")
+                # Check if any hirer data (beyond just empty lists of dicts) was found
+                total_hirer_objects = recommendations["Fortune500_Hirers"].apply(len).sum()
+                if total_hirer_objects == 0 and len(SCHOOL_TO_COMPANIES) > 0:
+                    print("Debug: Fortune500_Hirers (list of dicts) is all empty, but SCHOOL_TO_COMPANIES is populated.")
                     print(f"  Sample school_name_clean values from merged_df (first 3 used for lookup): {merged_df['school_name_clean'].unique()[:3]}")
         else:
             print("Warning: 'school_name_clean' column not found in merged_df for Fortune500 lookup.")
-            recommendations["Fortune500_Hirers"] = [[] for _ in range(len(merged_df))]
+            recommendations["Fortune500_Hirers"] = [[] for _ in range(len(merged_df))] # Series of empty lists
 
         # Enrollment - prefer 'number_of_students' from DF_COLLEGES, fallback to 'UGDS' or 'UGDS_sup'
         if 'number_of_students' in merged_df.columns:

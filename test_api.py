@@ -181,9 +181,15 @@ def test_recommendations():
                 print(f"   Admission Rate: {rec.get('Admission_Rate'):.1%}" if rec.get('Admission_Rate') is not None else "   Admission Rate: N/A")
                 print(f"   Total Enrollment: {rec.get('Total_Enrollment'):,}" if rec.get('Total_Enrollment') is not None else "   Total Enrollment: N/A")
                 
-                fortune_hirers = rec.get('Fortune500_Hirers', [])
-                if fortune_hirers:
-                    print(f"   Fortune 500 Hirers ({len(fortune_hirers)} total): {fortune_hirers[:3]}...")
+                fortune_hirers_list = rec.get('Fortune500_Hirers', [])
+                if fortune_hirers_list:
+                    print(f"   Fortune 500 Hirers ({len(fortune_hirers_list)} total companies):")
+                    for hirer_info in fortune_hirers_list[:3]: # Show top 3
+                        company = hirer_info.get("company_name", "Unknown Company")
+                        count = hirer_info.get("alumni_count", "N/A")
+                        print(f"     - {company}: {count} alumni")
+                    if len(fortune_hirers_list) > 3:
+                        print("       ...")
                 else:
                     print("   Fortune 500 Hirers: N/A")
 

@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import datetime
 import os
 import json
@@ -62,7 +62,7 @@ class Recommendation(BaseModel):
     Median_Earnings_5yr: Optional[float] = None
     Avg_GPA: Optional[float] = None
     Avg_SAT: Optional[float] = None
-    Fortune500_Hirers: List[str]
+    Fortune500_Hirers: List[Dict[str, Any]]
     Total_Enrollment: Optional[int] = None
     Admission_Rate: Optional[float] = None
     Avg_Net_Price: Optional[float] = None
