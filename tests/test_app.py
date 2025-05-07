@@ -196,3 +196,105 @@ def test_get_school_stats_query_case_insensitivity():
     data = response.json()
     assert expected_display_name_segment.lower() in data["school_name_display"].lower()
     assert data["school_name_standardized"] is not None 
+
+# Granular Endpoint Tests
+
+# --- /salary --- (Now testing the leaner version)
+def test_get_school_salary_stats_success():
+    school_name = "University of Pennsylvania" # Adjust if needed
+    response = client.get(f"/school/{school_name}/salary")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["school_name_display"].lower() == school_name.lower()
+    assert "school_name_standardized" in data
+    assert "avg_program_median_earnings_1yr" in data # Can be None
+    assert "avg_program_median_earnings_5yr" in data # Can be None
+    assert "query_timestamp" in data
+    # Ensure fields that were removed are not present
+    assert "programs_offered_count" not in data
+    assert "program_salary_details" not in data
+
+def test_get_school_salary_stats_not_found():
+    school_name = "NonExistentSchoolForSalaryTest"
+    response = client.get(f"/school/{school_name}/salary")
+    assert response.status_code == 404
+
+# --- /academics ---
+def test_get_school_academic_stats_success():
+    school_name = "University of Pennsylvania" # Adjust if needed
+    response = client.get(f"/school/{school_name}/academics")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["school_name_display"].lower() == school_name.lower()
+    assert "school_name_standardized" in data
+    assert "average_gpa" in data # Can be None
+    assert "average_sat" in data # Can be None
+    assert "admission_rate" in data # Can be None
+    assert "query_timestamp" in data
+
+def test_get_school_academic_stats_not_found():
+    school_name = "NonExistentSchoolForAcademicsTest"
+    response = client.get(f"/school/{school_name}/academics")
+    assert response.status_code == 404
+
+# --- /demographics ---
+def test_get_school_demographic_stats_success():
+    school_name = "University of Pennsylvania" # Adjust if needed
+    response = client.get(f"/school/{school_name}/demographics")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["school_name_display"].lower() == school_name.lower()
+    assert "school_name_standardized" in data
+    assert "total_enrollment" in data # Can be None
+    assert "undergraduate_enrollment" in data # Can be None
+    assert "white_enrollment_percent" in data # Can be None
+    assert "black_enrollment_percent" in data # Can be None
+    assert "hispanic_enrollment_percent" in data # Can be None
+    assert "asian_enrollment_percent" in data # Can be None
+    assert "query_timestamp" in data
+
+def test_get_school_demographic_stats_not_found():
+    school_name = "NonExistentSchoolForDemographicsTest"
+    response = client.get(f"/school/{school_name}/demographics")
+    assert response.status_code == 404
+
+# --- /admission_trends ---
+def test_get_school_admission_trends_success():
+    school_name = "University of Pennsylvania" # Adjust if needed
+    response = client.get(f"/school/{school_name}/admission_trends")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["school_name_display"].lower() == school_name.lower()
+    assert "school_name_standardized" in data
+    assert "admission_statistics" in data # Can be None or []
+    if data["admission_statistics"] is not None:
+        assert isinstance(data["admission_statistics"], list)
+        if data["admission_statistics"]:
+            assert "year" in data["admission_statistics"][0]
+            assert "metrics" in data["admission_statistics"][0]
+    assert "query_timestamp" in data
+
+def test_get_school_admission_trends_not_found():
+    school_name = "NonExistentSchoolForAdmissionTrendsTest"
+    response = client.get(f"/school/{school_name}/admission_trends")
+    assert response.status_code == 404
+
+# --- /hirers ---
+def test_get_school_hirer_stats_success():
+    school_name = "University of Pennsylvania" # Adjust if needed
+    response = client.get(f"/school/{school_name}/hirers")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["school_name_display"].lower() == school_name.lower()
+    assert "school_name_standardized" in data
+    assert "fortune_500_hirers" in data # Can be []
+    assert isinstance(data["fortune_500_hirers"], list)
+    if data["fortune_500_hirers"]:
+        assert "company_name" in data["fortune_500_hirers"][0]
+        assert "alumni_count" in data["fortune_500_hirers"][0]
+    assert "query_timestamp" in data
+
+def test_get_school_hirer_stats_not_found():
+    school_name = "NonExistentSchoolForHirersTest"
+    response = client.get(f"/school/{school_name}/hirers")
+    assert response.status_code == 404 

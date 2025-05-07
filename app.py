@@ -116,6 +116,45 @@ class SchoolStatsResponse(BaseModel):
     data_sources_used: List[str]
     query_timestamp: str
 
+# New Granular Pydantic Models
+class SchoolSalaryStatsResponse(BaseModel):
+    school_name_display: str
+    school_name_standardized: str
+    avg_program_median_earnings_1yr: Optional[float] = None
+    avg_program_median_earnings_5yr: Optional[float] = None
+    query_timestamp: str
+
+class SchoolAcademicStatsResponse(BaseModel):
+    school_name_display: str
+    school_name_standardized: str
+    average_gpa: Optional[float] = None
+    average_sat: Optional[float] = None
+    admission_rate: Optional[float] = None
+    query_timestamp: str
+
+class SchoolDemographicStatsResponse(BaseModel):
+    school_name_display: str
+    school_name_standardized: str
+    total_enrollment: Optional[int] = None
+    undergraduate_enrollment: Optional[int] = None
+    white_enrollment_percent: Optional[float] = None
+    black_enrollment_percent: Optional[float] = None
+    hispanic_enrollment_percent: Optional[float] = None
+    asian_enrollment_percent: Optional[float] = None
+    query_timestamp: str
+
+class SchoolAdmissionTrendsResponse(BaseModel):
+    school_name_display: str
+    school_name_standardized: str
+    admission_statistics: Optional[List[AdmissionYearStats]] = None
+    query_timestamp: str
+
+class SchoolHirerStatsResponse(BaseModel):
+    school_name_display: str
+    school_name_standardized: str
+    fortune_500_hirers: List[Dict[str, Any]]
+    query_timestamp: str
+
 # =====================================================
 # Utility function to clean data for JSON
 # =====================================================
@@ -317,3 +356,76 @@ async def get_school_stats(school_name_query: str):
             status_code=500,
             detail=f"Error fetching school statistics: {str(e)}"
         )
+
+@app.get("/school/{school_name_query}/salary", response_model=SchoolSalaryStatsResponse)
+async def get_school_salary_stats(school_name_query: str):
+    school_data = get_school_statistics(school_name_query)
+    if not school_data:
+        raise HTTPException(status_code=404, detail=f"School '{school_name_query}' not found.")
+    cleaned_data = clean_for_json(school_data)
+    return SchoolSalaryStatsResponse(
+        school_name_display=cleaned_data["school_name_display"],
+        school_name_standardized=cleaned_data["school_name_standardized"],
+        avg_program_median_earnings_1yr=cleaned_data.get("avg_program_median_earnings_1yr"),
+        avg_program_median_earnings_5yr=cleaned_data.get("avg_program_median_earnings_5yr"),
+        query_timestamp=datetime.now().isoformat()
+    )
+
+@app.get("/school/{school_name_query}/academics", response_model=SchoolAcademicStatsResponse)
+async def get_school_academic_stats(school_name_query: str):
+    school_data = get_school_statistics(school_name_query)
+    if not school_data:
+        raise HTTPException(status_code=404, detail=f"School '{school_name_query}' not found.")
+    cleaned_data = clean_for_json(school_data)
+    return SchoolAcademicStatsResponse(
+        school_name_display=cleaned_data["school_name_display"],
+        school_name_standardized=cleaned_data["school_name_standardized"],
+        average_gpa=cleaned_data.get("average_gpa"),
+        average_sat=cleaned_data.get("average_sat"),
+        admission_rate=cleaned_data.get("admission_rate"),
+        query_timestamp=datetime.now().isoformat()
+    )
+
+@app.get("/school/{school_name_query}/demographics", response_model=SchoolDemographicStatsResponse)
+async def get_school_demographic_stats(school_name_query: str):
+    school_data = get_school_statistics(school_name_query)
+    if not school_data:
+        raise HTTPException(status_code=404, detail=f"School '{school_name_query}' not found.")
+    cleaned_data = clean_for_json(school_data)
+    return SchoolDemographicStatsResponse(
+        school_name_display=cleaned_data["school_name_display"],
+        school_name_standardized=cleaned_data["school_name_standardized"],
+        total_enrollment=cleaned_data.get("total_enrollment"),
+        undergraduate_enrollment=cleaned_data.get("undergraduate_enrollment"),
+        white_enrollment_percent=cleaned_data.get("white_enrollment_percent"),
+        black_enrollment_percent=cleaned_data.get("black_enrollment_percent"),
+        hispanic_enrollment_percent=cleaned_data.get("hispanic_enrollment_percent"),
+        asian_enrollment_percent=cleaned_data.get("asian_enrollment_percent"),
+        query_timestamp=datetime.now().isoformat()
+    )
+
+@app.get("/school/{school_name_query}/admission_trends", response_model=SchoolAdmissionTrendsResponse)
+async def get_school_admission_trends(school_name_query: str):
+    school_data = get_school_statistics(school_name_query)
+    if not school_data:
+        raise HTTPException(status_code=404, detail=f"School '{school_name_query}' not found.")
+    cleaned_data = clean_for_json(school_data)
+    return SchoolAdmissionTrendsResponse(
+        school_name_display=cleaned_data["school_name_display"],
+        school_name_standardized=cleaned_data["school_name_standardized"],
+        admission_statistics=cleaned_data.get("admission_statistics", []),
+        query_timestamp=datetime.now().isoformat()
+    )
+
+@app.get("/school/{school_name_query}/hirers", response_model=SchoolHirerStatsResponse)
+async def get_school_hirer_stats(school_name_query: str):
+    school_data = get_school_statistics(school_name_query)
+    if not school_data:
+        raise HTTPException(status_code=404, detail=f"School '{school_name_query}' not found.")
+    cleaned_data = clean_for_json(school_data)
+    return SchoolHirerStatsResponse(
+        school_name_display=cleaned_data["school_name_display"],
+        school_name_standardized=cleaned_data["school_name_standardized"],
+        fortune_500_hirers=cleaned_data.get("fortune_500_hirers", []),
+        query_timestamp=datetime.now().isoformat()
+    )
