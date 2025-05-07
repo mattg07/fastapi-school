@@ -1,4 +1,4 @@
-Recommendation Quality Report - Generated: 2025-05-07T15:45:40.956097
+Recommendation Quality Report - Generated: 2025-05-07T16:00:58.193653
 Student Profiles Definition: {"weak": {"gpa": 2.0, "sat": 900, "act": 18, "description": "Low GPA, Low Test Scores"}, "weak_medium": {"gpa": 2.7, "sat": 1050, "act": 21, "description": "Below Average GPA, Average Test Scores"}, "medium": {"gpa": 3.3, "sat": 1200, "act": 25, "description": "Average GPA, Good Test Scores"}, "medium_strong": {"gpa": 3.7, "sat": 1350, "act": 29, "description": "Good GPA, Strong Test Scores"}, "strong": {"gpa": 3.9, "sat": 1500, "act": 34, "description": "Excellent GPA, Excellent Test Scores"}}
 Number of Recommendations Requested Per Profile: 3
 

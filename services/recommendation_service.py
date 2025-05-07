@@ -60,11 +60,13 @@ PATH_PROGRAMS = "recommendation-algo-2/programs_cleaned.csv"
 PATH_SCHOOL_SUP = "recommendation-algo-2/school_sup_data_cleaned.csv"
 PATH_COMPANIES = "recommendation-algo-2/companies_data_cleaned.csv"
 PATH_ADMISSIONS_TRENDS = "recommendation-algo-2/admission_trends_cleaned.csv"
+PATH_SCHOOL_IMAGES = "recommendation-algo-2/school_plus_image_data_cleaned.csv"
 
 DF_COLLEGES: pd.DataFrame = pd.DataFrame()
 DF_PROGRAMS: pd.DataFrame = pd.DataFrame()
 DF_SCHOOL_SUP: pd.DataFrame = pd.DataFrame()
 DF_COMPANIES: pd.DataFrame = pd.DataFrame()
+DF_SCHOOL_IMAGES: pd.DataFrame = pd.DataFrame()
 SCHOOL_TO_COMPANIES: Dict[str, Dict[str, int]] = {}
 admissions_data_dict: Dict[str, Dict[int, Dict[str, Any]]] = {}
 
@@ -259,6 +261,43 @@ def get_admission_statistics(std_name_clean: str) -> List[Dict[str, Any]]:
         return stats_list
     return []
 
+def load_school_images_data() -> pd.DataFrame:
+    """Loads and preprocesses school images data."""
+    if not os.path.exists(PATH_SCHOOL_IMAGES):
+        print(f"Warning: {PATH_SCHOOL_IMAGES} not found.")
+        return pd.DataFrame()
+    try:
+        df = pd.read_csv(PATH_SCHOOL_IMAGES)
+        # Create school_name_clean from instnm for joining
+        if "instnm" in df.columns:
+            df["school_name_clean"] = df["instnm"].astype(str).str.lower().str.strip()
+        else:
+            print(f"Warning: 'instnm' column not found in {PATH_SCHOOL_IMAGES}. Cannot create 'school_name_clean'.")
+            # Return an empty DataFrame or a df without school_name_clean if critical downstream
+            return pd.DataFrame() 
+        
+        # Select only necessary columns to keep the DataFrame lean
+        # Ensure target columns exist before selection
+        required_cols = ["school_name_clean", "cdn_url", "thumb_link"]
+        # Add unitid as well, it might be useful for more robust joining later
+        if "unitid" in df.columns: required_cols.append("unitid") 
+            
+        for col in required_cols:
+            if col not in df.columns and col not in ["unitid"]: # unitid is optional for now in this selection
+                print(f"Warning: Expected column '{col}' not found in {PATH_SCHOOL_IMAGES}.")
+                # Depending on how critical these are, you might return an empty df
+        
+        # Filter to columns that actually exist to prevent KeyErrors
+        existing_required_cols = [col for col in required_cols if col in df.columns]
+        df_selected = df[existing_required_cols].copy() # Use .copy() if further modifications are planned on df_selected
+
+        print("School images data loaded and preprocessed.")
+        return df_selected
+    except Exception as e:
+        print(f"Error loading school images data: {e}")
+        print(f"Traceback: {traceback.format_exc()}")
+        return pd.DataFrame()
+
 # Load admissions data on module import
 load_admissions_data()
 
@@ -267,6 +306,7 @@ DF_COLLEGES = load_colleges_data()
 DF_PROGRAMS = load_programs_data()
 DF_SCHOOL_SUP = load_school_sup_data()
 DF_COMPANIES, SCHOOL_TO_COMPANIES = load_companies_data_and_build_map()
+DF_SCHOOL_IMAGES = load_school_images_data()
 
 # ===================================================================================
 # Constants for Scoring & Logic (Example - can be expanded)
@@ -523,6 +563,31 @@ def parse_enrollment(x: Any) -> Union[int, np.nan]:
     except ValueError:
         return np.nan
 
+def parse_percentage_rate(x: Any) -> Union[float, np.nan]:
+    """
+    Safely convert a value (potentially with '%') to a numeric rate (decimal),
+    returning NaN if conversion fails.
+    Handles cases like '3%', '0.03', 3, 0.03.
+    """
+    if pd.isna(x):
+        return np.nan
+    try:
+        s = str(x).strip()
+        if s.endswith('%'):
+            # Remove % and convert to float, then divide by 100
+            return float(s[:-1]) / 100.0
+        else:
+            # Assume it's already a decimal rate or needs conversion
+            val = float(s)
+            # Optional: Add a check if the value seems like a whole percentage (e.g., 3 instead of 0.03)
+            # This might be needed if data format is inconsistent
+            # if val > 1 and val <= 100: 
+            #    print(f"Warning: Interpreting rate {val} as percentage, dividing by 100.")
+            #    return val / 100.0
+            return val
+    except (ValueError, TypeError):
+        return np.nan
+
 def clean_for_json(data_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
     Clean a list of dictionaries for JSON serialization by converting numpy types to Python native types.
@@ -692,9 +757,10 @@ def recommend_schools(
         def calculate_sat_tier(school_sat, student_sat):
             if pd.isnull(school_sat) or student_sat is None: return "Unknown"
             diff = school_sat - student_sat
-            if abs(diff) <= SAT_MATCH_THRESHOLD_STRICT: return "Match"
-            if SAT_MATCH_THRESHOLD_STRICT < diff <= SAT_MATCH_THRESHOLD_LOOSE: return "Safety"
-            if -SAT_MATCH_THRESHOLD_LOOSE <= diff < -SAT_MATCH_THRESHOLD_STRICT: return "Reach"
+            if abs(diff) <= SAT_MATCH_THRESHOLD_STRICT:
+                return "Match"
+            elif SAT_MATCH_THRESHOLD_STRICT < diff <= SAT_MATCH_THRESHOLD_LOOSE: return "Safety"
+            elif -SAT_MATCH_THRESHOLD_LOOSE <= diff < -SAT_MATCH_THRESHOLD_STRICT: return "Reach"
             if diff > SAT_MATCH_THRESHOLD_LOOSE : return "Far Safety"
             if diff < -SAT_MATCH_THRESHOLD_LOOSE: return "Far Reach"
             return "Unknown"
@@ -952,8 +1018,20 @@ def get_school_statistics(school_name_query: str, verbose: bool = True) -> Optio
     stats: Dict[str, Any] = {
         "school_name_display": school_display_name_found,
         "school_name_standardized": school_name_clean_found,
-        "data_sources_used": sorted(list(set(data_sources)))
+        "data_sources_used": sorted(list(set(data_sources))) 
     }
+
+    # --- Image URLs (from DF_SCHOOL_IMAGES) ---
+    stats["image_cdn_url"] = None
+    stats["image_thumbnail_url"] = None
+    if not DF_SCHOOL_IMAGES.empty and school_name_clean_found:
+        image_row = DF_SCHOOL_IMAGES[DF_SCHOOL_IMAGES["school_name_clean"] == school_name_clean_found]
+        if not image_row.empty:
+            # .get with default None for safety if columns are somehow missing despite loader checks
+            stats["image_cdn_url"] = image_row.iloc[0].get("cdn_url")
+            stats["image_thumbnail_url"] = image_row.iloc[0].get("thumb_link")
+            if "DF_SCHOOL_IMAGES" not in stats["data_sources_used"]:
+                stats["data_sources_used"].append("DF_SCHOOL_IMAGES")
 
     if not DF_PROGRAMS.empty:
         school_programs_df = DF_PROGRAMS[DF_PROGRAMS["school_name_clean"] == school_name_clean_found].copy()
@@ -985,12 +1063,14 @@ def get_school_statistics(school_name_query: str, verbose: bool = True) -> Optio
         stats["programs_offered_count"] = 0
         stats["program_salary_details"] = []
 
+    # --- Gather general school stats from DF_COLLEGES (using college_row_data) ---
     if not college_row_data.empty:
         stats["average_gpa"] = numeric_or_nan(college_row_data.get("average_gpa"))
         stats["average_sat"] = numeric_or_nan(college_row_data.get("average_sat_composite"))
-        adm_rate_coll = numeric_or_nan(college_row_data.get("acceptance_rate"))
+        # Admission rate: DF_COLLEGES might have 'acceptance_rate' or 'ADM_RATE'
+        adm_rate_coll = parse_percentage_rate(college_row_data.get("acceptance_rate")) # USE NEW PARSER
         if pd.isna(adm_rate_coll):
-             adm_rate_coll = numeric_or_nan(college_row_data.get("ADM_RATE"))
+             adm_rate_coll = parse_percentage_rate(college_row_data.get("ADM_RATE")) # USE NEW PARSER
         stats["admission_rate"] = adm_rate_coll
         stats["total_enrollment"] = parse_enrollment(college_row_data.get("number_of_students"))
         stats["average_net_price"] = numeric_or_nan(college_row_data.get("average_net_price"))
@@ -998,8 +1078,10 @@ def get_school_statistics(school_name_query: str, verbose: bool = True) -> Optio
         stats["longitude"] = numeric_or_nan(college_row_data.get("LONGITUDE"))
         if "DF_COLLEGES" not in stats["data_sources_used"]: stats["data_sources_used"].append("DF_COLLEGES")
 
+    # --- Gather stats from DF_SCHOOL_SUP (using sup_row_data, and fallback for some general stats) ---
     if not sup_row_data.empty:
-        if pd.isna(stats.get("admission_rate")) : stats["admission_rate"] = numeric_or_nan(sup_row_data.get("ADM_RATE"))
+        # Fill in missing general stats if not already populated by DF_COLLEGES
+        if pd.isna(stats.get("admission_rate")) : stats["admission_rate"] = parse_percentage_rate(sup_row_data.get("ADM_RATE")) # USE NEW PARSER
         if pd.isna(stats.get("average_sat")): stats["average_sat"] = numeric_or_nan(sup_row_data.get("SAT_AVG"))
         if pd.isna(stats.get("total_enrollment")): stats["total_enrollment"] = parse_enrollment(sup_row_data.get("UGDS"))
         if pd.isna(stats.get("latitude")): stats["latitude"] = numeric_or_nan(sup_row_data.get("LATITUDE"))
@@ -1024,6 +1106,7 @@ def get_school_statistics(school_name_query: str, verbose: bool = True) -> Optio
         if "DF_COMPANIES" not in stats["data_sources_used"]: stats["data_sources_used"].append("DF_COMPANIES")
     stats["fortune_500_hirers"] = hirer_details_list
     
+    # Ensure all keys from Pydantic model are present, filling with None if missing
     expected_keys = [
         "average_gpa", "average_sat", "admission_rate", "total_enrollment", 
         "undergraduate_enrollment", "average_net_price", "latitude", "longitude",
@@ -1031,7 +1114,8 @@ def get_school_statistics(school_name_query: str, verbose: bool = True) -> Optio
         "hispanic_enrollment_percent", "asian_enrollment_percent",
         "avg_program_median_earnings_1yr", "avg_program_median_earnings_5yr",
         "programs_offered_count", "program_salary_details", "admission_statistics",
-        "fortune_500_hirers"
+        "fortune_500_hirers",
+        "image_cdn_url", "image_thumbnail_url" # Added new keys
     ]
     for key in expected_keys:
         if key not in stats:
@@ -1042,6 +1126,7 @@ def get_school_statistics(school_name_query: str, verbose: bool = True) -> Optio
             else:
                 stats[key] = None
 
+    # Final sort for data_sources_used
     stats["data_sources_used"] = sorted(list(set(stats["data_sources_used"])))
 
     if verbose: print(f"Successfully compiled statistics for {school_display_name_found} from sources: {stats['data_sources_used']}")

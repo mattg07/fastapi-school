@@ -25,6 +25,12 @@ university-recommendation-server/
 │   ├── recommendation_service.py     # Core recommendation and statistics logic
 │   └── act_sat_conversion.py         # Utility for ACT/SAT score conversion
 ├── recommendation-algo-2/            # Data files (CSV)
+│   ├── colleges_data_cleaned.csv
+│   ├── programs_cleaned.csv
+│   ├── school_sup_data_cleaned.csv
+│   ├── companies_data_cleaned.csv
+│   ├── admission_trends_cleaned.csv
+│   └── school_plus_image_data_cleaned.csv # Image URLs
 ├── tests/                            # Pytest test suite
 │   ├── test_app.py                   # API endpoint tests
 │   ├── test_quality_recommendations.py # Script to generate a text report for recommendation quality review
@@ -53,7 +59,13 @@ university-recommendation-server/
     # For testing, ensure pytest and httpx are installed:
     # pip install pytest httpx
     ```
-4.  **Data Files:** Ensure your CSV data files are present in the `recommendation-algo-2/` directory.
+4.  **Data Files:** Ensure your CSV data files are present in the `recommendation-algo-2/` directory, including:
+    - `colleges_data_cleaned.csv`
+    - `programs_cleaned.csv`
+    - `school_sup_data_cleaned.csv`
+    - `companies_data_cleaned.csv`
+    - `admission_trends_cleaned.csv`
+    - `school_plus_image_data_cleaned.csv`
 5.  **(Optional) Environment Variables:** Configure using a `.env` file if needed (e.g., for `CORS_ORIGINS` if not allowing all).
 
 ## Running the Application
@@ -78,10 +90,20 @@ The API will be available at `http://localhost:8000`.
 -   `GET /health`: Health check.
 -   `GET /programs`: Lists all available academic programs.
 -   `POST /recommendations`: Generates university recommendations.
-    -   **Body**: `RecommendationRequest` model (GPA, SAT, ACT, program, preferences, number of recommendations).
--   `GET /school/{school_name_query}`: Provides detailed statistics for the queried school.
-    -   **Path Parameter**: `school_name_query` (can be a partial or full name).
+    -   **Body**: `RecommendationRequest` model.
+-   `GET /school/{school_name_query}`: Provides comprehensive statistics for the queried school (including image URLs).
+    -   **Path Parameter**: `school_name_query`.
     -   **Response**: `SchoolStatsResponse` model.
+-   `GET /school/{school_name_query}/academics`: Provides academic stats (GPA, SAT, admission rate) and image URLs.
+    -   **Response**: `SchoolAcademicStatsResponse` model.
+-   `GET /school/{school_name_query}/salary`: Provides average program salary stats.
+    -   **Response**: `SchoolSalaryStatsResponse` model.
+-   `GET /school/{school_name_query}/demographics`: Provides enrollment and demographic stats.
+    -   **Response**: `SchoolDemographicStatsResponse` model.
+-   `GET /school/{school_name_query}/admission_trends`: Provides historical admission stats.
+    -   **Response**: `SchoolAdmissionTrendsResponse` model.
+-   `GET /school/{school_name_query}/hirers`: Provides Fortune 500 hirer stats.
+    -   **Response**: `SchoolHirerStatsResponse` model.
 -   `GET /program_coverage`: Returns a count of how many schools match each program.
 
 Access interactive API documentation:

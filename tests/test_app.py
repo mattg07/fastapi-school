@@ -163,6 +163,10 @@ def test_get_school_stats_success():
     assert isinstance(data["data_sources_used"], list)
     assert "query_timestamp" in data
 
+    # Check for new image URL fields (can be None if no image data for the school)
+    assert "image_cdn_url" in data
+    assert "image_thumbnail_url" in data
+
     # If programs are offered, check structure of one program detail
     if data["programs_offered_count"] > 0 and data["program_salary_details"]:
         first_program = data["program_salary_details"][0]
@@ -230,6 +234,8 @@ def test_get_school_academic_stats_success():
     assert "average_gpa" in data # Can be None
     assert "average_sat" in data # Can be None
     assert "admission_rate" in data # Can be None
+    assert "image_cdn_url" in data      # New assertion
+    assert "image_thumbnail_url" in data # New assertion
     assert "query_timestamp" in data
 
 def test_get_school_academic_stats_not_found():

@@ -113,6 +113,9 @@ class SchoolStatsResponse(BaseModel):
     admission_statistics: Optional[List[AdmissionYearStats]] = None
     fortune_500_hirers: List[Dict[str, Any]]
     
+    image_cdn_url: Optional[str] = None
+    image_thumbnail_url: Optional[str] = None
+    
     data_sources_used: List[str]
     query_timestamp: str
 
@@ -130,6 +133,8 @@ class SchoolAcademicStatsResponse(BaseModel):
     average_gpa: Optional[float] = None
     average_sat: Optional[float] = None
     admission_rate: Optional[float] = None
+    image_cdn_url: Optional[str] = None
+    image_thumbnail_url: Optional[str] = None
     query_timestamp: str
 
 class SchoolDemographicStatsResponse(BaseModel):
@@ -383,6 +388,8 @@ async def get_school_academic_stats(school_name_query: str):
         average_gpa=cleaned_data.get("average_gpa"),
         average_sat=cleaned_data.get("average_sat"),
         admission_rate=cleaned_data.get("admission_rate"),
+        image_cdn_url=cleaned_data.get("image_cdn_url"),
+        image_thumbnail_url=cleaned_data.get("image_thumbnail_url"),
         query_timestamp=datetime.now().isoformat()
     )
 
