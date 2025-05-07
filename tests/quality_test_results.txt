@@ -1,11 +1,11 @@
-Recommendation Quality Report - Generated: 2025-05-07T16:00:58.193653
+Recommendation Quality Report - Generated: 2025-05-07T16:03:37.795505
 Student Profiles Definition: {"weak": {"gpa": 2.0, "sat": 900, "act": 18, "description": "Low GPA, Low Test Scores"}, "weak_medium": {"gpa": 2.7, "sat": 1050, "act": 21, "description": "Below Average GPA, Average Test Scores"}, "medium": {"gpa": 3.3, "sat": 1200, "act": 25, "description": "Average GPA, Good Test Scores"}, "medium_strong": {"gpa": 3.7, "sat": 1350, "act": 29, "description": "Good GPA, Strong Test Scores"}, "strong": {"gpa": 3.9, "sat": 1500, "act": 34, "description": "Excellent GPA, Excellent Test Scores"}}
 Number of Recommendations Requested Per Profile: 3
 
 Program: Accounting and Related Services - Profile: weak (Low GPA, Low Test Scores)
-  Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: 65587.0 - 5yr Earnings: None
-  Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: 65587.0 - 5yr Earnings: None
-  Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: 65587.0 - 5yr Earnings: None
+  La Salle University - SAT: 990.0 - GPA: 3.4 - 1yr Earnings: 54772.0 - 5yr Earnings: 79680.0
+  University of Houston-Downtown - SAT: 996.0 - GPA: 3.3 - 1yr Earnings: 54128.0 - 5yr Earnings: 67119.0
+  Albertus Magnus College - SAT: 972.0 - GPA: 3.0 - 1yr Earnings: 53440.0 - 5yr Earnings: None
 
 Program: Accounting and Related Services - Profile: weak_medium (Below Average GPA, Average Test Scores)
   University of Alaska Anchorage - SAT: 1142.0 - GPA: 2.8 - 1yr Earnings: 65560.0 - 5yr Earnings: 79196.0
@@ -50,7 +50,7 @@ Program: Aerospace Aeronautical and Astronautical Engineering - Profile: medium_
 Program: Aerospace Aeronautical and Astronautical Engineering - Profile: strong (Excellent GPA, Excellent Test Scores)
   Case Western Reserve University - SAT: 1436.0 - GPA: 3.8 - 1yr Earnings: 83639.0 - 5yr Earnings: 90949.0
   University of Notre Dame - SAT: 1490.0 - GPA: 4.0 - 1yr Earnings: 81057.0 - 5yr Earnings: 98886.0
-  University of Notre Dame - SAT: 1490.0 - GPA: 4.0 - 1yr Earnings: 81057.0 - 5yr Earnings: 98886.0
+  University of Michigan-Ann Arbor - SAT: 1448.0 - GPA: 3.9 - 1yr Earnings: 80225.0 - 5yr Earnings: 113025.0
 
 Program: Agricultural Business and Management - Profile: weak (Low GPA, Low Test Scores)
   University of Arkansas at Pine Bluff - SAT: 978.0 - GPA: 2.9 - 1yr Earnings: 31868.0 - 5yr Earnings: None
@@ -230,7 +230,7 @@ Program: Apparel and Textiles - Profile: strong (Excellent GPA, Excellent Test S
 Program: Applied Mathematics - Profile: weak (Low GPA, Low Test Scores)
   Delaware State University - SAT: 932.0 - GPA: 3.2 - 1yr Earnings: None - 5yr Earnings: None
   William Penn University - SAT: 990.0 - GPA: 3.1 - 1yr Earnings: None - 5yr Earnings: None
-  Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: None - 5yr Earnings: None
+  Averett University - SAT: 965.0 - GPA: 3.1 - 1yr Earnings: None - 5yr Earnings: None
 
 Program: Applied Mathematics - Profile: weak_medium (Below Average GPA, Average Test Scores)
   Bloomfield College - SAT: 962.0 - GPA: 2.7 - 1yr Earnings: None - 5yr Earnings: None
@@ -274,8 +274,8 @@ Program: Architecture - Profile: medium_strong (Good GPA, Strong Test Scores)
 
 Program: Architecture - Profile: strong (Excellent GPA, Excellent Test Scores)
   University of Notre Dame - SAT: 1490.0 - GPA: 4.0 - 1yr Earnings: 62957.0 - 5yr Earnings: 78022.0
-  University of Notre Dame - SAT: 1490.0 - GPA: 4.0 - 1yr Earnings: 62957.0 - 5yr Earnings: 78022.0
   University of Virginia-Main Campus - SAT: 1436.0 - GPA: 4.0 - 1yr Earnings: 51740.0 - 5yr Earnings: 73156.0
+  University of California-Berkeley - SAT: 1449.0 - GPA: 3.9 - 1yr Earnings: 50917.0 - 5yr Earnings: 79951.0
 
 Program: Area Studies - Profile: weak (Low GPA, Low Test Scores)
   Bennett College - SAT: 911.0 - GPA: 2.8 - 1yr Earnings: None - 5yr Earnings: None
@@ -529,8 +529,8 @@ Program: Business/Managerial Economics - Profile: strong (Excellent GPA, Excelle
 
 Program: Cell/Cellular Biology and Anatomical Sciences - Profile: weak (Low GPA, Low Test Scores)
   Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: None - 5yr Earnings: None
-  Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: None - 5yr Earnings: None
-  Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: None - 5yr Earnings: None
+  California State University-San Marcos - SAT: 1043.0 - GPA: 3.4 - 1yr Earnings: 49734.0 - 5yr Earnings: 72329.0
+  San Francisco State University - SAT: 1046.0 - GPA: 3.4 - 1yr Earnings: 40794.0 - 5yr Earnings: 78780.0
 
 Program: Cell/Cellular Biology and Anatomical Sciences - Profile: weak_medium (Below Average GPA, Average Test Scores)
   California State University-San Marcos - SAT: 1043.0 - GPA: 3.4 - 1yr Earnings: 49734.0 - 5yr Earnings: 72329.0
@@ -703,9 +703,9 @@ Program: Communication Disorders Sciences and Services - Profile: strong (Excell
   New York University - SAT: 1443.0 - GPA: 3.8 - 1yr Earnings: None - 5yr Earnings: 76076.0
 
 Program: Communication and Media Studies - Profile: weak (Low GPA, Low Test Scores)
-  Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: 40019.0 - 5yr Earnings: 56649.0
-  Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: 40019.0 - 5yr Earnings: 56649.0
-  Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: 40019.0 - 5yr Earnings: 56649.0
+  Rochester University - SAT: 980.0 - GPA: 3.0 - 1yr Earnings: 36051.0 - 5yr Earnings: 43825.0
+  La Salle University - SAT: 990.0 - GPA: 3.4 - 1yr Earnings: 36037.0 - 5yr Earnings: 54978.0
+  Clayton  State University - SAT: 951.0 - GPA: 3.0 - 1yr Earnings: 34493.0 - 5yr Earnings: 39837.0
 
 Program: Communication and Media Studies - Profile: weak_medium (Below Average GPA, Average Test Scores)
   Colorado State University Global - SAT: 1048.0 - GPA: 2.7 - 1yr Earnings: 49436.0 - 5yr Earnings: 76111.0
@@ -978,9 +978,9 @@ Program: Construction Management - Profile: strong (Excellent GPA, Excellent Tes
   Drexel University - SAT: 1295.0 - GPA: 3.8 - 1yr Earnings: 78030.0 - 5yr Earnings: 99117.0
 
 Program: Criminal Justice and Corrections - Profile: weak (Low GPA, Low Test Scores)
-  Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: 54207.0 - 5yr Earnings: 58019.0
-  Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: 54207.0 - 5yr Earnings: 58019.0
-  Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: 54207.0 - 5yr Earnings: 58019.0
+  Wayland Baptist University - SAT: 995.0 - GPA: 3.2 - 1yr Earnings: 53038.0 - 5yr Earnings: 54933.0
+  Averett University - SAT: 965.0 - GPA: 3.1 - 1yr Earnings: 43494.0 - 5yr Earnings: 55149.0
+  Montana State University-Northern - SAT: 892.0 - GPA: 2.8 - 1yr Earnings: 43158.0 - 5yr Earnings: None
 
 Program: Criminal Justice and Corrections - Profile: weak_medium (Below Average GPA, Average Test Scores)
   Colorado State University Global - SAT: 1048.0 - GPA: 2.7 - 1yr Earnings: 61786.0 - 5yr Earnings: 66885.0
@@ -1020,7 +1020,7 @@ Program: Criminology - Profile: medium (Average GPA, Good Test Scores)
 Program: Criminology - Profile: medium_strong (Good GPA, Strong Test Scores)
   University of Minnesota-Twin Cities - SAT: 1337.0 - GPA: 3.7 - 1yr Earnings: 41780.0 - 5yr Earnings: 61352.0
   University of St Thomas - SAT: 1269.0 - GPA: 3.6 - 1yr Earnings: 41780.0 - 5yr Earnings: 68406.0
-  University of St Thomas - SAT: 1269.0 - GPA: 3.6 - 1yr Earnings: 41780.0 - 5yr Earnings: 68406.0
+  University of Denver - SAT: 1295.0 - GPA: 3.8 - 1yr Earnings: 40667.0 - 5yr Earnings: 40863.0
 
 Program: Criminology - Profile: strong (Excellent GPA, Excellent Test Scores)
   University of Pennsylvania - SAT: 1511.0 - GPA: 3.9 - 1yr Earnings: None - 5yr Earnings: None
@@ -1149,13 +1149,13 @@ Program: Drama/Theatre Arts and Stagecraft - Profile: medium_strong (Good GPA, S
 
 Program: Drama/Theatre Arts and Stagecraft - Profile: strong (Excellent GPA, Excellent Test Scores)
   University of Notre Dame - SAT: 1490.0 - GPA: 4.0 - 1yr Earnings: 37531.0 - 5yr Earnings: 62555.0
-  University of Notre Dame - SAT: 1490.0 - GPA: 4.0 - 1yr Earnings: 37531.0 - 5yr Earnings: 62555.0
   Carnegie Mellon University - SAT: 1513.0 - GPA: 3.9 - 1yr Earnings: 32967.0 - 5yr Earnings: 26137.0
+  University of North Carolina at Chapel Hill - SAT: 1402.0 - GPA: 4.0 - 1yr Earnings: 26457.0 - 5yr Earnings: None
 
 Program: Ecology Evolution Systematics and Population Biology - Profile: weak (Low GPA, Low Test Scores)
-  Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: None - 5yr Earnings: None
   Keystone College - SAT: 974.0 - GPA: 3.0 - 1yr Earnings: None - 5yr Earnings: None
   University of Maryland Eastern Shore - SAT: 941.0 - GPA: 3.1 - 1yr Earnings: None - 5yr Earnings: None
+  Greensboro College - SAT: 1000.0 - GPA: 3.4 - 1yr Earnings: None - 5yr Earnings: None
 
 Program: Ecology Evolution Systematics and Population Biology - Profile: weak_medium (Below Average GPA, Average Test Scores)
   Savannah State University - SAT: 965.0 - GPA: 2.8 - 1yr Earnings: None - 5yr Earnings: None
@@ -1280,7 +1280,7 @@ Program: Electrical Engineering Technologies/Technicians - Profile: strong (Exce
 Program: Engineering General - Profile: weak (Low GPA, Low Test Scores)
   University of Maryland Eastern Shore - SAT: 941.0 - GPA: 3.1 - 1yr Earnings: 73839.0 - 5yr Earnings: None
   Saint Augustine's University - SAT: 847.0 - GPA: 2.5 - 1yr Earnings: None - 5yr Earnings: None
-  Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: None - 5yr Earnings: None
+  Claflin University - SAT: 942.0 - GPA: 3.3 - 1yr Earnings: None - 5yr Earnings: None
 
 Program: Engineering General - Profile: weak_medium (Below Average GPA, Average Test Scores)
   University of Alaska Anchorage - SAT: 1142.0 - GPA: 2.8 - 1yr Earnings: None - 5yr Earnings: 102342.0
@@ -1425,7 +1425,7 @@ Program: Environmental/Environmental Health Engineering - Profile: medium_strong
 Program: Environmental/Environmental Health Engineering - Profile: strong (Excellent GPA, Excellent Test Scores)
   Georgia Institute of Technology-Main Campus - SAT: 1418.0 - GPA: 4.0 - 1yr Earnings: 70008.0 - 5yr Earnings: 86952.0
   University of Notre Dame - SAT: 1490.0 - GPA: 4.0 - 1yr Earnings: 64675.0 - 5yr Earnings: None
-  University of Notre Dame - SAT: 1490.0 - GPA: 4.0 - 1yr Earnings: 64675.0 - 5yr Earnings: None
+  University of Michigan-Ann Arbor - SAT: 1448.0 - GPA: 3.9 - 1yr Earnings: 57824.0 - 5yr Earnings: 88990.0
 
 Program: Ethnic Cultural Minority Gender and Group Studies - Profile: weak (Low GPA, Low Test Scores)
   Gallaudet University - SAT: 919.0 - GPA: 3.2 - 1yr Earnings: 31541.0 - 5yr Earnings: 48417.0
@@ -1804,13 +1804,13 @@ Program: History - Profile: strong (Excellent GPA, Excellent Test Scores)
 
 Program: Homeland Security - Profile: weak (Low GPA, Low Test Scores)
   Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: 78275.0 - 5yr Earnings: 70497.0
-  Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: 78275.0 - 5yr Earnings: 70497.0
-  Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: 78275.0 - 5yr Earnings: 70497.0
+  New Jersey City University - SAT: 970.0 - GPA: 3.2 - 1yr Earnings: 39624.0 - 5yr Earnings: 56988.0
+  Elizabeth City State University - SAT: 968.0 - GPA: 3.0 - 1yr Earnings: None - 5yr Earnings: None
 
 Program: Homeland Security - Profile: weak_medium (Below Average GPA, Average Test Scores)
   New England College - SAT: 1030.0 - GPA: 2.9 - 1yr Earnings: None - 5yr Earnings: None
   Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: 78275.0 - 5yr Earnings: 70497.0
-  Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: 78275.0 - 5yr Earnings: 70497.0
+  Columbia College - SAT: 1099.0 - GPA: 3.6 - 1yr Earnings: 67338.0 - 5yr Earnings: None
 
 Program: Homeland Security - Profile: medium (Average GPA, Good Test Scores)
   Utica University - SAT: 1110.0 - GPA: 3.4 - 1yr Earnings: 57215.0 - 5yr Earnings: 65308.0
@@ -1879,8 +1879,8 @@ Program: Human Development Family Studies and Related Services - Profile: strong
 
 Program: Human Resources Management and Services - Profile: weak (Low GPA, Low Test Scores)
   Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: 76000.0 - 5yr Earnings: 89709.0
-  Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: 76000.0 - 5yr Earnings: 89709.0
-  Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: 76000.0 - 5yr Earnings: 89709.0
+  California State University-San Bernardino - SAT: 985.0 - GPA: 3.4 - 1yr Earnings: 45144.0 - 5yr Earnings: 54852.0
+  Inter American University of Puerto Rico-Fajardo - SAT: None - GPA: 2.0 - 1yr Earnings: None - 5yr Earnings: 27211.0
 
 Program: Human Resources Management and Services - Profile: weak_medium (Below Average GPA, Average Test Scores)
   Colorado State University Global - SAT: 1048.0 - GPA: 2.7 - 1yr Earnings: 61802.0 - 5yr Earnings: 81083.0
@@ -1905,7 +1905,7 @@ Program: Human Resources Management and Services - Profile: strong (Excellent GP
 Program: Human Services General - Profile: weak (Low GPA, Low Test Scores)
   Mercy University - SAT: 988.0 - GPA: 3.3 - 1yr Earnings: 37274.0 - 5yr Earnings: 48268.0
   Lincoln University - SAT: 941.0 - GPA: 3.2 - 1yr Earnings: 34374.0 - 5yr Earnings: 49213.0
-  Lincoln University - SAT: 941.0 - GPA: 3.2 - 1yr Earnings: 34374.0 - 5yr Earnings: 49213.0
+  Bluefield University - SAT: 996.0 - GPA: 3.3 - 1yr Earnings: 33808.0 - 5yr Earnings: 42456.0
 
 Program: Human Services General - Profile: weak_medium (Below Average GPA, Average Test Scores)
   Colorado State University Global - SAT: 1048.0 - GPA: 2.7 - 1yr Earnings: 43336.0 - 5yr Earnings: 44167.0
@@ -2028,9 +2028,9 @@ Program: International Business - Profile: strong (Excellent GPA, Excellent Test
   Villanova University - SAT: 1422.0 - GPA: 3.9 - 1yr Earnings: 74529.0 - 5yr Earnings: 103705.0
 
 Program: International Relations and National Security Studies - Profile: weak (Low GPA, Low Test Scores)
-  Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: None - 5yr Earnings: None
   Newberry College - SAT: 992.0 - GPA: 3.6 - 1yr Earnings: None - 5yr Earnings: None
   Notre Dame College - SAT: 1000.0 - GPA: 3.1 - 1yr Earnings: None - 5yr Earnings: None
+  Ferrum College - SAT: 967.0 - GPA: 3.1 - 1yr Earnings: None - 5yr Earnings: None
 
 Program: International Relations and National Security Studies - Profile: weak_medium (Below Average GPA, Average Test Scores)
   Sweet Briar College - SAT: 1139.0 - GPA: 2.9 - 1yr Earnings: None - 5yr Earnings: None
@@ -2074,8 +2074,8 @@ Program: International/Global Studies - Profile: medium_strong (Good GPA, Strong
 
 Program: International/Global Studies - Profile: strong (Excellent GPA, Excellent Test Scores)
   University of Notre Dame - SAT: 1490.0 - GPA: 4.0 - 1yr Earnings: 69362.0 - 5yr Earnings: None
-  University of Notre Dame - SAT: 1490.0 - GPA: 4.0 - 1yr Earnings: 69362.0 - 5yr Earnings: None
   Boston College - SAT: 1437.0 - GPA: 3.9 - 1yr Earnings: 51371.0 - 5yr Earnings: 81227.0
+  University of California-Berkeley - SAT: 1449.0 - GPA: 3.9 - 1yr Earnings: 46660.0 - 5yr Earnings: None
 
 Program: Journalism - Profile: weak (Low GPA, Low Test Scores)
   Central State University - SAT: 881.0 - GPA: 2.8 - 1yr Earnings: 28306.0 - 5yr Earnings: 36745.0
@@ -2370,12 +2370,12 @@ Program: Mental and Social Health Services and Allied Professions - Profile: med
 Program: Mental and Social Health Services and Allied Professions - Profile: medium_strong (Good GPA, Strong Test Scores)
   Drexel University - SAT: 1295.0 - GPA: 3.8 - 1yr Earnings: 41891.0 - 5yr Earnings: 57810.0
   Union College - SAT: 1411.0 - GPA: 3.7 - 1yr Earnings: None - 5yr Earnings: None
-  Union College - SAT: 1411.0 - GPA: 3.7 - 1yr Earnings: None - 5yr Earnings: None
+  University of Massachusetts-Lowell - SAT: 1268.0 - GPA: 3.7 - 1yr Earnings: None - 5yr Earnings: None
 
 Program: Mental and Social Health Services and Allied Professions - Profile: strong (Excellent GPA, Excellent Test Scores)
   University of Pennsylvania - SAT: 1511.0 - GPA: 3.9 - 1yr Earnings: 58269.0 - 5yr Earnings: 91201.0
   Union College - SAT: 1411.0 - GPA: 3.7 - 1yr Earnings: None - 5yr Earnings: None
-  Union College - SAT: 1411.0 - GPA: 3.7 - 1yr Earnings: None - 5yr Earnings: None
+  University of Cincinnati-Main Campus - SAT: 1247.0 - GPA: 3.7 - 1yr Earnings: 46270.0 - 5yr Earnings: None
 
 Program: Microbiological Sciences and Immunology - Profile: weak (Low GPA, Low Test Scores)
   California State University-Los Angeles - SAT: 979.0 - GPA: 3.3 - 1yr Earnings: 39266.0 - 5yr Earnings: None
@@ -2405,7 +2405,7 @@ Program: Microbiological Sciences and Immunology - Profile: strong (Excellent GP
 Program: Multi-/Interdisciplinary Studies General - Profile: weak (Low GPA, Low Test Scores)
   CUNY York College - SAT: 960.0 - GPA: 3.1 - 1yr Earnings: 38718.0 - 5yr Earnings: None
   Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: 33596.0 - 5yr Earnings: None
-  Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: 33596.0 - 5yr Earnings: None
+  Savannah State University - SAT: 965.0 - GPA: 2.8 - 1yr Earnings: 23631.0 - 5yr Earnings: None
 
 Program: Multi-/Interdisciplinary Studies General - Profile: weak_medium (Below Average GPA, Average Test Scores)
   Savannah State University - SAT: 965.0 - GPA: 2.8 - 1yr Earnings: 23631.0 - 5yr Earnings: None
@@ -2505,7 +2505,7 @@ Program: Natural Resources Conservation and Research - Profile: strong (Excellen
 Program: Neurobiology and Neurosciences - Profile: weak (Low GPA, Low Test Scores)
   Delaware State University - SAT: 932.0 - GPA: 3.2 - 1yr Earnings: None - 5yr Earnings: None
   Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: None - 5yr Earnings: None
-  Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: None - 5yr Earnings: None
+  Mount St. Joseph University - SAT: 1097.0 - GPA: 3.5 - 1yr Earnings: None - 5yr Earnings: None
 
 Program: Neurobiology and Neurosciences - Profile: weak_medium (Below Average GPA, Average Test Scores)
   University of New Hampshire at Manchester - SAT: 1105.0 - GPA: 3.4 - 1yr Earnings: 39573.0 - 5yr Earnings: 65560.0
@@ -2595,12 +2595,12 @@ Program: Parks Recreation and Leisure Facilities Management - Profile: medium (A
 Program: Parks Recreation and Leisure Facilities Management - Profile: medium_strong (Good GPA, Strong Test Scores)
   University of Florida - SAT: 1394.0 - GPA: 3.9 - 1yr Earnings: 41046.0 - 5yr Earnings: 52792.0
   North Carolina State University at Raleigh - SAT: 1349.0 - GPA: 3.9 - 1yr Earnings: 38116.0 - 5yr Earnings: 50810.0
-  Union College - SAT: 1411.0 - GPA: 3.7 - 1yr Earnings: None - 5yr Earnings: None
+  University of Washington-Seattle Campus - SAT: 1356.0 - GPA: 3.8 - 1yr Earnings: None - 5yr Earnings: None
 
 Program: Parks Recreation and Leisure Facilities Management - Profile: strong (Excellent GPA, Excellent Test Scores)
   Union College - SAT: 1411.0 - GPA: 3.7 - 1yr Earnings: None - 5yr Earnings: None
-  Union College - SAT: 1411.0 - GPA: 3.7 - 1yr Earnings: None - 5yr Earnings: None
   University of Florida - SAT: 1394.0 - GPA: 3.9 - 1yr Earnings: 41046.0 - 5yr Earnings: 52792.0
+  North Carolina State University at Raleigh - SAT: 1349.0 - GPA: 3.9 - 1yr Earnings: 38116.0 - 5yr Earnings: 50810.0
 
 Program: Parks Recreation and Leisure Studies - Profile: weak (Low GPA, Low Test Scores)
   Grambling State University - SAT: 981.0 - GPA: 3.0 - 1yr Earnings: 19830.0 - 5yr Earnings: 36507.0
@@ -3129,8 +3129,8 @@ Program: Social Sciences Other - Profile: strong (Excellent GPA, Excellent Test 
 
 Program: Social Work - Profile: weak (Low GPA, Low Test Scores)
   Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: 45259.0 - 5yr Earnings: 50324.0
-  Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: 45259.0 - 5yr Earnings: 50324.0
-  Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: 45259.0 - 5yr Earnings: 50324.0
+  CUNY York College - SAT: 960.0 - GPA: 3.1 - 1yr Earnings: 44742.0 - 5yr Earnings: 63534.0
+  Governors State University - SAT: 955.0 - GPA: 4.0 - 1yr Earnings: 44133.0 - 5yr Earnings: 47709.0
 
 Program: Social Work - Profile: weak_medium (Below Average GPA, Average Test Scores)
   University of Alaska Anchorage - SAT: 1142.0 - GPA: 2.8 - 1yr Earnings: 45565.0 - 5yr Earnings: None
@@ -3280,7 +3280,7 @@ Program: Teacher Education and Professional Development Specific Levels and Meth
 Program: Teacher Education and Professional Development Specific Subject Areas - Profile: weak (Low GPA, Low Test Scores)
   William Paterson University of New Jersey - SAT: 994.0 - GPA: 3.0 - 1yr Earnings: 58854.0 - 5yr Earnings: 62718.0
   Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: 47387.0 - 5yr Earnings: 45879.0
-  Bethel University - SAT: 984.0 - GPA: 3.6 - 1yr Earnings: 47387.0 - 5yr Earnings: 45879.0
+  SUNY Buffalo State University - SAT: 989.0 - GPA: 3.0 - 1yr Earnings: 34646.0 - 5yr Earnings: 47811.0
 
 Program: Teacher Education and Professional Development Specific Subject Areas - Profile: weak_medium (Below Average GPA, Average Test Scores)
   Abraham Baldwin Agricultural College - SAT: 1029.0 - GPA: 2.9 - 1yr Earnings: 50429.0 - 5yr Earnings: None

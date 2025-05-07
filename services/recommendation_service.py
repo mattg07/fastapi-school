@@ -870,7 +870,13 @@ def recommend_schools(
         ugds_asian_col = 'UGDS_ASIAN_sup' if 'UGDS_ASIAN_sup' in merged_df.columns else 'UGDS_ASIAN'
         recommendations["Asian_Enrollment_Percent"] = pd.to_numeric(merged_df.get(ugds_asian_col), errors="coerce")
 
-        # 5. Sort and Limit
+        # 5. Drop Duplicates, Sort, and Limit
+        
+        # Ensure uniqueness based on the final school name
+        if not recommendations.empty:
+            recommendations.drop_duplicates(subset=['School'], keep='first', inplace=True)
+            if verbose: print(f"Dropped duplicate schools, {len(recommendations)} unique schools remaining.")
+        
         # Simple sort for now: by tier (custom sort order) then by a proxy for quality/fit if available
         tier_order = ["Strong Match", "Match", "Reach", "Safety", "Far Reach", "Far Safety", "Limited Academic Data", "Unknown"]
         recommendations["Recommendation_Tier"] = pd.Categorical(recommendations["Recommendation_Tier"], categories=tier_order, ordered=True)
