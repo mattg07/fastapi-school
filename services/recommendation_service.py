@@ -834,3 +834,217 @@ def recommend_schools(
         # but if we want to provide a specific message from here:
         # raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
         return pd.DataFrame() # Or raise the exception
+
+def get_school_statistics(school_name_query: str, verbose: bool = True) -> Optional[Dict[str, Any]]:
+    """
+    Retrieves and computes various statistics for a given school name.
+
+    Args:
+        school_name_query (str): The name of the school to query (can be display or standardized form).
+        verbose (bool): If True, prints debug information during execution.
+
+    Returns:
+        Optional[Dict[str, Any]]: A dictionary containing school statistics if found, otherwise None.
+    """
+    school_name_clean_found: Optional[str] = None
+    school_display_name_found: Optional[str] = None
+    data_sources: List[str] = []
+
+    query_lower_strip = str(school_name_query).lower().strip()
+
+    # Initializing to prevent UnboundLocalError in edge cases
+    college_row_data = pd.Series(dtype=object)
+    sup_row_data = pd.Series(dtype=object)
+
+    # Strategy: Find school_name_clean and best display_name
+    # 1. Check DF_COLLEGES (best source for display name and clean name)
+    if not DF_COLLEGES.empty:
+        matched_by_clean = DF_COLLEGES[DF_COLLEGES["name_clean"] == query_lower_strip]
+        if len(matched_by_clean) == 1:
+            school_name_clean_found = matched_by_clean.iloc[0]["name_clean"]
+            school_display_name_found = matched_by_clean.iloc[0]["name"]
+            college_row_data = matched_by_clean.iloc[0]
+            if verbose: print(f"Found in DF_COLLEGES by clean name: {school_display_name_found}")
+            data_sources.append("DF_COLLEGES")
+        elif not matched_by_clean.empty:
+            if verbose: print(f"Ambiguous clean name match in DF_COLLEGES for '{query_lower_strip}'. Count: {len(matched_by_clean)}")
+        else:
+            if 'name' in DF_COLLEGES.columns:
+                temp_lower_name_series = DF_COLLEGES["name"].astype(str).str.lower().str.strip()
+                matched_by_display = DF_COLLEGES[temp_lower_name_series == query_lower_strip]
+                if len(matched_by_display) == 1:
+                    school_name_clean_found = matched_by_display.iloc[0]["name_clean"]
+                    school_display_name_found = matched_by_display.iloc[0]["name"]
+                    college_row_data = matched_by_display.iloc[0]
+                    if verbose: print(f"Found in DF_COLLEGES by display name: {school_display_name_found}")
+                    data_sources.append("DF_COLLEGES")
+                elif not matched_by_display.empty:
+                     if verbose: print(f"Ambiguous display name match in DF_COLLEGES for '{query_lower_strip}'. Count: {len(matched_by_display)}")
+
+    # 2. If not found in DF_COLLEGES, check DF_PROGRAMS (primarily to find school_name_clean)
+    if school_name_clean_found is None and not DF_PROGRAMS.empty:
+        df_programs_name_col_exists = 'name' in DF_PROGRAMS.columns
+        matched_prog_by_clean = DF_PROGRAMS[DF_PROGRAMS["school_name_clean"] == query_lower_strip]
+        if not matched_prog_by_clean.empty:
+            school_name_clean_found = matched_prog_by_clean.iloc[0]["school_name_clean"]
+            school_display_name_found = matched_prog_by_clean.iloc[0]["name"] if df_programs_name_col_exists else school_name_clean_found
+            if verbose: print(f"Found school_name_clean '{school_name_clean_found}' via DF_PROGRAMS by clean name. Initial display: {school_display_name_found}")
+            data_sources.append("DF_PROGRAMS")
+        elif df_programs_name_col_exists:
+            temp_lower_prog_name_series = DF_PROGRAMS["name"].astype(str).str.lower().str.strip()
+            matched_prog_by_display = DF_PROGRAMS[temp_lower_prog_name_series == query_lower_strip]
+            if not matched_prog_by_display.empty:
+                school_name_clean_found = matched_prog_by_display.iloc[0]["school_name_clean"]
+                school_display_name_found = matched_prog_by_display.iloc[0]["name"]
+                if verbose: print(f"Found school_name_clean '{school_name_clean_found}' via DF_PROGRAMS by display name: {school_display_name_found}")
+                data_sources.append("DF_PROGRAMS")
+        
+        if school_name_clean_found and "DF_COLLEGES" not in data_sources and not DF_COLLEGES.empty:
+            college_ref_match = DF_COLLEGES[DF_COLLEGES["name_clean"] == school_name_clean_found]
+            if not college_ref_match.empty:
+                school_display_name_found = college_ref_match.iloc[0]["name"]
+                college_row_data = college_ref_match.iloc[0]
+                if verbose: print(f"Upgraded display name to '{school_display_name_found}' from DF_COLLEGES.")
+                data_sources.append("DF_COLLEGES")
+            
+    # 3. If still not found, check DF_SCHOOL_SUP (INSTNM for display, school_name_clean for key)
+    if school_name_clean_found is None and not DF_SCHOOL_SUP.empty:
+        matched_sup_by_clean = DF_SCHOOL_SUP[DF_SCHOOL_SUP["school_name_clean"] == query_lower_strip]
+        if not matched_sup_by_clean.empty:
+            school_name_clean_found = matched_sup_by_clean.iloc[0]["school_name_clean"]
+            school_display_name_found = matched_sup_by_clean.iloc[0].get("INSTNM", school_name_clean_found)
+            sup_row_data = matched_sup_by_clean.iloc[0]
+            if verbose: print(f"Found school_name_clean '{school_name_clean_found}' via DF_SCHOOL_SUP by clean name. Initial display: {school_display_name_found}")
+            data_sources.append("DF_SCHOOL_SUP")
+        else:
+            if 'INSTNM' in DF_SCHOOL_SUP.columns:
+                temp_lower_instnm_series = DF_SCHOOL_SUP["INSTNM"].astype(str).str.lower().str.strip()
+                matched_sup_by_display = DF_SCHOOL_SUP[temp_lower_instnm_series == query_lower_strip]
+                if not matched_sup_by_display.empty:
+                    school_name_clean_found = matched_sup_by_display.iloc[0]["school_name_clean"]
+                    school_display_name_found = matched_sup_by_display.iloc[0]["INSTNM"]
+                    sup_row_data = matched_sup_by_display.iloc[0]
+                    if verbose: print(f"Found school_name_clean '{school_name_clean_found}' via DF_SCHOOL_SUP by display name: {school_display_name_found}")
+                    data_sources.append("DF_SCHOOL_SUP")
+
+        if school_name_clean_found and "DF_COLLEGES" not in data_sources and not DF_COLLEGES.empty:
+            college_ref_match = DF_COLLEGES[DF_COLLEGES["name_clean"] == school_name_clean_found]
+            if not college_ref_match.empty:
+                school_display_name_found = college_ref_match.iloc[0]["name"]
+                college_row_data = college_ref_match.iloc[0]
+                if verbose: print(f"Upgraded display name to '{school_display_name_found}' from DF_COLLEGES.")
+                data_sources.append("DF_COLLEGES")
+            elif school_name_clean_found and "DF_COLLEGES" in data_sources and college_row_data.empty:
+                college_ref_match = DF_COLLEGES[DF_COLLEGES["name_clean"] == school_name_clean_found]
+                if not college_ref_match.empty: college_row_data = college_ref_match.iloc[0]
+
+        if school_name_clean_found and "DF_SCHOOL_SUP" in data_sources and sup_row_data.empty:
+             sup_data_match = DF_SCHOOL_SUP[DF_SCHOOL_SUP["school_name_clean"] == school_name_clean_found]
+             if not sup_data_match.empty: sup_row_data = sup_data_match.iloc[0]
+
+
+    if not school_name_clean_found:
+        if verbose: print(f"School '{school_name_query}' not found after checking all sources.")
+        return None
+
+    school_display_name_found = school_display_name_found if school_display_name_found else school_name_clean_found
+
+    stats: Dict[str, Any] = {
+        "school_name_display": school_display_name_found,
+        "school_name_standardized": school_name_clean_found,
+        "data_sources_used": sorted(list(set(data_sources)))
+    }
+
+    if not DF_PROGRAMS.empty:
+        school_programs_df = DF_PROGRAMS[DF_PROGRAMS["school_name_clean"] == school_name_clean_found].copy()
+        if not school_programs_df.empty:
+            school_programs_df["earn_mdn_1yr_num"] = pd.to_numeric(school_programs_df["earn_mdn_1yr"], errors='coerce')
+            school_programs_df["earn_mdn_5yr_num"] = pd.to_numeric(school_programs_df["earn_mdn_5yr"], errors='coerce')
+            
+            stats["avg_program_median_earnings_1yr"] = school_programs_df["earn_mdn_1yr_num"].mean(skipna=True)
+            stats["avg_program_median_earnings_5yr"] = school_programs_df["earn_mdn_5yr_num"].mean(skipna=True)
+            stats["programs_offered_count"] = school_programs_df["program"].nunique()
+            
+            program_salary_details_list: List[Dict[str, Any]] = []
+            for _, row in school_programs_df.iterrows():
+                program_salary_details_list.append({
+                    "program_name": row["program"],
+                    "median_earnings_1yr": row["earn_mdn_1yr_num"] if pd.notna(row["earn_mdn_1yr_num"]) else None,
+                    "median_earnings_5yr": row["earn_mdn_5yr_num"] if pd.notna(row["earn_mdn_5yr_num"]) else None,
+                })
+            stats["program_salary_details"] = sorted(program_salary_details_list, key=lambda x: str(x.get("program_name")))
+            if "DF_PROGRAMS" not in stats["data_sources_used"]: stats["data_sources_used"].append("DF_PROGRAMS")
+        else:
+            stats["avg_program_median_earnings_1yr"] = None
+            stats["avg_program_median_earnings_5yr"] = None
+            stats["programs_offered_count"] = 0
+            stats["program_salary_details"] = []
+    else:
+        stats["avg_program_median_earnings_1yr"] = None
+        stats["avg_program_median_earnings_5yr"] = None
+        stats["programs_offered_count"] = 0
+        stats["program_salary_details"] = []
+
+    if not college_row_data.empty:
+        stats["average_gpa"] = numeric_or_nan(college_row_data.get("average_gpa"))
+        stats["average_sat"] = numeric_or_nan(college_row_data.get("average_sat_composite"))
+        adm_rate_coll = numeric_or_nan(college_row_data.get("acceptance_rate"))
+        if pd.isna(adm_rate_coll):
+             adm_rate_coll = numeric_or_nan(college_row_data.get("ADM_RATE"))
+        stats["admission_rate"] = adm_rate_coll
+        stats["total_enrollment"] = parse_enrollment(college_row_data.get("number_of_students"))
+        stats["average_net_price"] = numeric_or_nan(college_row_data.get("average_net_price"))
+        stats["latitude"] = numeric_or_nan(college_row_data.get("LATITUDE"))
+        stats["longitude"] = numeric_or_nan(college_row_data.get("LONGITUDE"))
+        if "DF_COLLEGES" not in stats["data_sources_used"]: stats["data_sources_used"].append("DF_COLLEGES")
+
+    if not sup_row_data.empty:
+        if pd.isna(stats.get("admission_rate")) : stats["admission_rate"] = numeric_or_nan(sup_row_data.get("ADM_RATE"))
+        if pd.isna(stats.get("average_sat")): stats["average_sat"] = numeric_or_nan(sup_row_data.get("SAT_AVG"))
+        if pd.isna(stats.get("total_enrollment")): stats["total_enrollment"] = parse_enrollment(sup_row_data.get("UGDS"))
+        if pd.isna(stats.get("latitude")): stats["latitude"] = numeric_or_nan(sup_row_data.get("LATITUDE"))
+        if pd.isna(stats.get("longitude")): stats["longitude"] = numeric_or_nan(sup_row_data.get("LONGITUDE"))
+        
+        stats["undergraduate_enrollment"] = parse_enrollment(sup_row_data.get("UGDS"))
+        stats["white_enrollment_percent"] = numeric_or_nan(sup_row_data.get("UGDS_WHITE"))
+        stats["black_enrollment_percent"] = numeric_or_nan(sup_row_data.get("UGDS_BLACK"))
+        stats["hispanic_enrollment_percent"] = numeric_or_nan(sup_row_data.get("UGDS_HISP"))
+        stats["asian_enrollment_percent"] = numeric_or_nan(sup_row_data.get("UGDS_ASIAN"))
+        if "DF_SCHOOL_SUP" not in stats["data_sources_used"]: stats["data_sources_used"].append("DF_SCHOOL_SUP")
+
+    stats["admission_statistics"] = get_admission_statistics(school_name_clean_found)
+    if stats["admission_statistics"] and "Admissions Data" not in stats["data_sources_used"]:
+         stats["data_sources_used"].append("Admissions Data")
+
+    hirer_details_list: List[Dict[str, Any]] = []
+    if school_name_clean_found in SCHOOL_TO_COMPANIES:
+        for company, count in SCHOOL_TO_COMPANIES[school_name_clean_found].items():
+            hirer_details_list.append({"company_name": str(company), "alumni_count": int(count)})
+        hirer_details_list = sorted(hirer_details_list, key=lambda x: x["company_name"])
+        if "DF_COMPANIES" not in stats["data_sources_used"]: stats["data_sources_used"].append("DF_COMPANIES")
+    stats["fortune_500_hirers"] = hirer_details_list
+    
+    expected_keys = [
+        "average_gpa", "average_sat", "admission_rate", "total_enrollment", 
+        "undergraduate_enrollment", "average_net_price", "latitude", "longitude",
+        "white_enrollment_percent", "black_enrollment_percent", 
+        "hispanic_enrollment_percent", "asian_enrollment_percent",
+        "avg_program_median_earnings_1yr", "avg_program_median_earnings_5yr",
+        "programs_offered_count", "program_salary_details", "admission_statistics",
+        "fortune_500_hirers"
+    ]
+    for key in expected_keys:
+        if key not in stats:
+            if key == "program_salary_details" or key == "fortune_500_hirers":
+                stats[key] = []
+            elif key == "programs_offered_count":
+                stats[key] = 0
+            else:
+                stats[key] = None
+
+    stats["data_sources_used"] = sorted(list(set(stats["data_sources_used"])))
+
+    if verbose: print(f"Successfully compiled statistics for {school_display_name_found} from sources: {stats['data_sources_used']}")
+    return stats
+
+# Make sure to add get_school_statistics to __all__ if you have one, or ensure it's importable.

@@ -7,7 +7,7 @@ import os
 import json
 import math
 
-from services.recommendation_service import recommend_schools, VALID_PROGRAMS
+from services.recommendation_service import recommend_schools, VALID_PROGRAMS, get_school_statistics
 
 import pandas as pd
 import numpy as np
@@ -79,6 +79,42 @@ class RecommendationResponse(BaseModel):
     recommendations: List[Recommendation]
     timestamp: str
     total_schools: int
+
+# New Models for School Statistics Endpoint
+class SchoolProgramSalaryInfo(BaseModel):
+    program_name: str
+    median_earnings_1yr: Optional[float] = None
+    median_earnings_5yr: Optional[float] = None
+
+class SchoolStatsResponse(BaseModel):
+    school_name_display: str
+    school_name_standardized: str
+    
+    average_gpa: Optional[float] = None
+    average_sat: Optional[float] = None
+    admission_rate: Optional[float] = None
+    total_enrollment: Optional[int] = None
+    undergraduate_enrollment: Optional[int] = None
+    average_net_price: Optional[float] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    
+    white_enrollment_percent: Optional[float] = None
+    black_enrollment_percent: Optional[float] = None
+    hispanic_enrollment_percent: Optional[float] = None
+    asian_enrollment_percent: Optional[float] = None
+
+    avg_program_median_earnings_1yr: Optional[float] = None
+    avg_program_median_earnings_5yr: Optional[float] = None
+    
+    programs_offered_count: int
+    program_salary_details: List[SchoolProgramSalaryInfo]
+
+    admission_statistics: Optional[List[AdmissionYearStats]] = None
+    fortune_500_hirers: List[Dict[str, Any]]
+    
+    data_sources_used: List[str]
+    query_timestamp: str
 
 # =====================================================
 # Utility function to clean data for JSON
@@ -248,3 +284,36 @@ async def health_check():
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "version": "1.0.0"
     }
+
+@app.get("/school/{school_name_query}", response_model=SchoolStatsResponse)
+async def get_school_stats(school_name_query: str):
+    """
+    Provides detailed statistics for a requested school, including average salaries 
+    across its programs, demographic data, admission trends, and general info.
+    """
+    try:
+        school_data = get_school_statistics(school_name_query)
+        if not school_data:
+            raise HTTPException(
+                status_code=404,
+                detail=f"School matching '{school_name_query}' not found or data is insufficient."
+            )
+        
+        # Ensure data is JSON serializable (especially NaN -> None)
+        cleaned_school_data = clean_for_json(school_data)
+        cleaned_school_data["query_timestamp"] = datetime.now().isoformat()
+
+        return SchoolStatsResponse(**cleaned_school_data)
+        
+    except HTTPException as http_exc:
+        raise http_exc # Re-raise known HTTP exceptions
+    except Exception as e:
+        import traceback
+        # Consider logging the error here instead of printing if you have a logger setup
+        print(f"\nError details in /school endpoint: {str(e)}")
+        print(f"Error type: {type(e)}")
+        print(f"Traceback:\n{traceback.format_exc()}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error fetching school statistics: {str(e)}"
+        )

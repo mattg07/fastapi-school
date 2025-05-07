@@ -126,4 +126,73 @@ def test_get_program_coverage():
     # This part of the test assumes the data files exist at the expected paths.
     # If they don't, your endpoint returns an error message.
     # You might want separate tests for the file-not-found scenario,
-    # or ensure test data files are present in a test environment. 
+    # or ensure test data files are present in a test environment.
+
+# Tests for /school/{school_name_query} endpoint
+
+def test_get_school_stats_success():
+    # NOTE: This test assumes "University of Pennsylvania" (or its standardized form)
+    # exists in your data and has associated program/salary/hirer info for a meaningful test.
+    # Adjust the school_name if needed, or consider mocking get_school_statistics for more controlled testing.
+    school_name = "University of Pennsylvania"
+    response = client.get(f"/school/{school_name}")
+    
+    assert response.status_code == 200
+    data = response.json()
+    
+    assert data["school_name_display"].lower() == school_name.lower() # Check display name (case-insensitive)
+    assert "school_name_standardized" in data
+    assert data["school_name_standardized"] is not None # Should have a standardized name
+    
+    # Check for some key statistical fields presence
+    assert "average_gpa" in data
+    assert "average_sat" in data
+    assert "admission_rate" in data
+    assert "total_enrollment" in data
+    assert "undergraduate_enrollment" in data
+    assert "avg_program_median_earnings_1yr" in data # This can be None if no programs have 1yr data
+    assert "avg_program_median_earnings_5yr" in data # This can be None if no programs have 5yr data
+    assert "programs_offered_count" in data
+    assert data["programs_offered_count"] >= 0
+    assert "program_salary_details" in data
+    assert isinstance(data["program_salary_details"], list)
+    assert "admission_statistics" in data # This can be None or an empty list
+    assert "fortune_500_hirers" in data
+    assert isinstance(data["fortune_500_hirers"], list)
+    assert "data_sources_used" in data
+    assert isinstance(data["data_sources_used"], list)
+    assert "query_timestamp" in data
+
+    # If programs are offered, check structure of one program detail
+    if data["programs_offered_count"] > 0 and data["program_salary_details"]:
+        first_program = data["program_salary_details"][0]
+        assert "program_name" in first_program
+        assert "median_earnings_1yr" in first_program
+        assert "median_earnings_5yr" in first_program
+
+    # If hirers are present, check structure
+    if data["fortune_500_hirers"]:
+        first_hirer = data["fortune_500_hirers"][0]
+        assert "company_name" in first_hirer
+        assert "alumni_count" in first_hirer
+
+def test_get_school_stats_not_found():
+    school_name = "This Is A Non Existent University Name Xyz123"
+    response = client.get(f"/school/{school_name}")
+    
+    assert response.status_code == 404
+    data = response.json()
+    assert "detail" in data
+    assert f"School matching '{school_name}' not found" in data["detail"]
+
+def test_get_school_stats_query_case_insensitivity():
+    # Assuming "Harvard University" is in your data for this test.
+    # Adjust if necessary.
+    school_name_variant_case = "hArVaRd UnIvErSiTy"
+    expected_display_name_segment = "Harvard University" # Actual display name might vary slightly based on your data source
+    
+    response = client.get(f"/school/{school_name_variant_case}")
+    assert response.status_code == 200
+    data = response.json()
+    assert expected_display_name_segment.lower() in data["school_name_display"].lower()
+    assert data["school_name_standardized"] is not None 
