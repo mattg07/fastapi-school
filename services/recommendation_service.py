@@ -325,7 +325,7 @@ def _merge_dataframes(
         df_school_sup, # df_school_sup has 'INSTNM' as its original name column
         on="school_name_clean",
         how="inner",
-        suffixes=("_left", "_sup") # _left refers to merged_df from previous step, _sup to df_school_sup
+        suffixes=("", "_sup") # _left refers to merged_df from previous step, _sup to df_school_sup
     )
 
     if verbose:
@@ -616,17 +616,40 @@ def recommend_schools(
             return pd.DataFrame()
         if verbose: print(f"After merging with colleges: {len(merged_df)} rows.")
         
-        # Standardize school name - prefer name from colleges
-        if "name_coll" in merged_df.columns:
-            merged_df["school_display_name"] = merged_df["name_coll"]
-        elif "name_prog" in merged_df.columns: # Fallback to program's school name
-             merged_df["school_display_name"] = merged_df["name_prog"]
-        else: # If neither, try to find any 'name' column that might exist
-            if "name" in merged_df.columns:
-                 merged_df["school_display_name"] = merged_df["name"]
-            else: # Critical fallback: use school_name_clean if no display name found
-                merged_df["school_display_name"] = merged_df["school_name_clean"]
+        # Determine school_display_name with fallbacks using combine_first for prioritized filling
+        # Priority: 1. DF_PROGRAMS's "name" (becomes name_prog after first merge with _prog suffix)
+        #           2. DF_COLLEGES's "name" (becomes name_coll after first merge with _coll suffix)
+        #           3. DF_SCHOOL_SUP's "INSTNM" (could be INSTNM_sup or INSTNM after second merge)
+        #           4. school_name_clean (the join key, as a last resort)
 
+        # Initialize with the highest priority: name_prog from DF_PROGRAMS
+        if "name_prog" in merged_df.columns:
+            merged_df["school_display_name"] = merged_df["name_prog"].copy()
+        else:
+            # If name_prog isn't present (should be, if DF_PROGRAMS has "name"), start with NaNs
+            merged_df["school_display_name"] = pd.Series([np.nan] * len(merged_df), index=merged_df.index, dtype=object)
+        
+        # Fallback to name_coll from DF_COLLEGES
+        if "name_coll" in merged_df.columns:
+            merged_df["school_display_name"] = merged_df["school_display_name"].combine_first(merged_df["name_coll"])
+
+        # Fallback to INSTNM from DF_SCHOOL_SUP
+        # The second merge (with DF_SCHOOL_SUP) uses suffixes=("", "_sup").
+        # So, if INSTNM from DF_SCHOOL_SUP conflicted with an existing column, it became INSTNM_sup.
+        # Otherwise, it remained INSTNM.
+        if "INSTNM_sup" in merged_df.columns: # Prefer suffixed version if it exists
+            merged_df["school_display_name"] = merged_df["school_display_name"].combine_first(merged_df["INSTNM_sup"])
+        elif "INSTNM" in merged_df.columns: # Check for non-suffixed INSTNM (likely from DF_SCHOOL_SUP)
+            merged_df["school_display_name"] = merged_df["school_display_name"].combine_first(merged_df["INSTNM"])
+        
+        # Final fallback to school_name_clean
+        if "school_name_clean" in merged_df.columns:
+            merged_df["school_display_name"] = merged_df["school_display_name"].combine_first(merged_df["school_name_clean"])
+        
+        # Log if any display names are still NaN after all fallbacks
+        if merged_df["school_display_name"].isna().any():
+            count_na = merged_df["school_display_name"].isna().sum()
+            if verbose: print(f"Warning: {count_na} school_display_name entries are still NaN after all fallbacks.")
 
         # Merge with School Supplementary data
         # DF_SCHOOL_SUP has 'school_name_clean', 'INSTNM', 'UGDS', 'UG', 'UGDS_WHITE', 'UGDS_BLACK', 'UGDS_HISP', 'UGDS_ASIAN'
