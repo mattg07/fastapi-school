@@ -1,8 +1,14 @@
 import requests
 import json
 from datetime import datetime
+import pytest
 
 API_BASE = "http://localhost:8000"
+
+@pytest.fixture
+def program_name():
+    # You can customize this list or the logic to select a program name
+    return "Computer Science" # Default example
 
 def get_valid_programs():
     """Get the list of valid program names from the API."""

@@ -144,6 +144,9 @@ async def get_recommendations(request: RecommendationRequest):
             timestamp=datetime.now().isoformat(),
             total_schools=len(recommendations_list)
         )
+
+    except HTTPException as http_exc:
+        raise http_exc
         
     except Exception as e:
         import traceback
