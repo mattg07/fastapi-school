@@ -25,12 +25,14 @@ university-recommendation-server/
 │   └── settings.py       # Application settings
 ├── services/            # Business logic
 │   └── recommendation_service.py
-├── data/               # Data files
+├── recommendation-algo-2/ # Data files used by the application
 │   ├── colleges_data_cleaned.csv
 │   ├── programs_cleaned.csv
-│   ├── school_sup_data.csv
-│   └── companies_data_cleaned.csv
+│   ├── school_sup_data_cleaned.csv
+│   ├── companies_data_cleaned.csv
+│   └── admission_trends_cleaned.csv
 ├── tests/              # Test files
+│   └── test_api.py
 ├── Dockerfile          # Docker configuration
 ├── docker-compose.yml  # Docker Compose configuration
 └── requirements.txt    # Python dependencies
@@ -55,11 +57,12 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. Place your data files in the `data/` directory:
-- colleges_data_cleaned.csv
-- programs_cleaned.csv
-- school_sup_data.csv
-- companies_data_cleaned.csv
+4. Place your data files in the `recommendation-algo-2/` directory (relative to the project root):
+- `colleges_data_cleaned.csv`
+- `programs_cleaned.csv`
+- `school_sup_data_cleaned.csv`
+- `companies_data_cleaned.csv`
+- `admission_trends_cleaned.csv`
 
 5. Create a `.env` file in the root directory:
 ```env
@@ -108,9 +111,19 @@ curl -X POST "http://localhost:8000/recommendations" \
      -d '{
            "gpa": 3.8,
            "sat": 1450,
-           "program": "Computer Science"
+           "program": "Computer Science",
+           "act": 32,
+           "number_of_recommendations": 5 
          }'
 ```
+
+Note: Additional optional parameters can be included in the JSON body, such as:
+`location_preference` (e.g., "Urban", "Suburban", "Rural", or "any")
+`cost_preference` (e.g., "Low" or "any")
+`admission_rate_preference` (e.g., "High", "Medium", "Low", or "any")
+`salary_preference` (e.g., "High" or "any")
+
+If not provided, these preferences default to "any".
 
 ## Testing
 

@@ -23,7 +23,14 @@ def test_get_recommendations():
     test_data = {
         "gpa": 3.8,
         "sat": 1450,
-        "program": "Computer Science"
+        "program": "Computer Science",
+        "act": 32,
+        "location_preference": "any",
+        "cost_preference": "any",
+        "admission_rate_preference": "any",
+        "salary_preference": "any",
+        "fortune500_preference": "any",
+        "number_of_recommendations": 10
     }
     response = client.post("/recommendations", json=test_data)
     assert response.status_code == 200
@@ -54,7 +61,14 @@ def test_invalid_gpa():
     test_data = {
         "gpa": 5.0,  # Invalid GPA
         "sat": 1450,
-        "program": "Computer Science"
+        "program": "Computer Science",
+        "act": 32,
+        "location_preference": "any",
+        "cost_preference": "any",
+        "admission_rate_preference": "any",
+        "salary_preference": "any",
+        "fortune500_preference": "any",
+        "number_of_recommendations": 10
     }
     response = client.post("/recommendations", json=test_data)
     assert response.status_code == 422  # Validation error 

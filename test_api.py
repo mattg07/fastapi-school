@@ -167,15 +167,37 @@ def test_recommendations():
             print(f"Total Schools Found: {result['total_schools']}")
             print(f"Timestamp: {result['timestamp']}")
             
-            # Print top 3 recommendations
-            print("\nTop 3 Recommendations:")
+            # Print top 3 recommendations in more detail
+            print("\nDetailed Top 3 Recommendations:")
             for i, rec in enumerate(result['recommendations'][:3], 1):
-                print(f"\n{i}. {rec['School']}")
-                print(f"   Tier: {rec['Recommendation_Tier']}")
-                print(f"   GPA/SAT: {rec['Avg_GPA']}/{rec['Avg_SAT']}")
-                # Checking some fields:
-                print(f"   Admission Rate: {rec.get('Admission_Rate')}")
-                print(f"   Fortune 500 Hirers: {rec.get('Fortune500_Hirers')[:3]}")
+                print(f"\n{i}. School: {rec.get('School')}")
+                print(f"   Tier: {rec.get('Recommendation_Tier')}")
+                print(f"   Avg GPA (School): {rec.get('Avg_GPA')}")
+                print(f"   Avg SAT (School): {rec.get('Avg_SAT')}")
+                print(f"   Has Salary Data: {rec.get('Has_Salary_Data')}")
+                if rec.get('Has_Salary_Data'):
+                    print(f"     Median Earnings (1yr): ${rec.get('Median_Earnings_1yr'):,.0f}" if rec.get('Median_Earnings_1yr') else "     Median Earnings (1yr): N/A")
+                    print(f"     Median Earnings (5yr): ${rec.get('Median_Earnings_5yr'):,.0f}" if rec.get('Median_Earnings_5yr') else "     Median Earnings (5yr): N/A")
+                print(f"   Admission Rate: {rec.get('Admission_Rate'):.1%}" if rec.get('Admission_Rate') is not None else "   Admission Rate: N/A")
+                print(f"   Total Enrollment: {rec.get('Total_Enrollment'):,}" if rec.get('Total_Enrollment') is not None else "   Total Enrollment: N/A")
+                
+                fortune_hirers = rec.get('Fortune500_Hirers', [])
+                if fortune_hirers:
+                    print(f"   Fortune 500 Hirers ({len(fortune_hirers)} total): {fortune_hirers[:3]}...")
+                else:
+                    print("   Fortune 500 Hirers: N/A")
+
+                admission_stats = rec.get('Admission_Statistics', [])
+                if admission_stats:
+                    latest_stats = sorted(admission_stats, key=lambda x: x.get('year', 0), reverse=True)[0]
+                    print(f"   Latest Admission Stats ({latest_stats.get('year')}):")
+                    for metric, value in latest_stats.get('metrics', {}).items():
+                        if isinstance(value, float) and not value.is_integer():
+                            print(f"     {metric}: {value:.3f}") # More precision for floats
+                        else:
+                            print(f"     {metric}: {value}")
+                else:
+                    print("   Admission Statistics: N/A")
                 
         except requests.exceptions.RequestException as e:
             print(f"Request Error: {e}")
@@ -217,9 +239,16 @@ def test_additional_scenario():
         print(f"Total Schools Found: {result['total_schools']}")
         print(f"Timestamp: {result['timestamp']}")
         
-        # Print all recommendations
+        # Print all recommendations with key details
+        print("\nRecommendations Received:")
         for i, rec in enumerate(result["recommendations"], start=1):
-            print(f"{i}. {rec['School']} - {rec['Recommendation_Tier']}")
+            print(f"\n{i}. School: {rec.get('School')}")
+            print(f"   Tier: {rec.get('Recommendation_Tier')}")
+            print(f"   Avg GPA (School): {rec.get('Avg_GPA')}")
+            print(f"   Avg SAT (School): {rec.get('Avg_SAT')}")
+            if rec.get('Has_Salary_Data'):
+                 print(f"     Median Earnings (1yr): ${rec.get('Median_Earnings_1yr'):,.0f}" if rec.get('Median_Earnings_1yr') else "     Median Earnings (1yr): N/A")
+            print(f"   Admission Rate: {rec.get('Admission_Rate'):.1%}" if rec.get('Admission_Rate') is not None else "   Admission Rate: N/A")
         
     except requests.exceptions.RequestException as e:
         print(f"HTTP Request Error: {e}")

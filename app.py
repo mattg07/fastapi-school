@@ -40,11 +40,10 @@ class RecommendationRequest(BaseModel):
     sat: int
     program: str
     act: float
-    location_preference: str
-    cost_preference: str
-    admission_rate_preference: str
-    salary_preference: str
-    fortune500_preference: str
+    location_preference: Optional[str] = "any"
+    cost_preference: Optional[str] = "any"
+    admission_rate_preference: Optional[str] = "any"
+    salary_preference: Optional[str] = "any"
     number_of_recommendations: int
 
 class AdmissionMetrics(BaseModel):
@@ -123,7 +122,6 @@ async def get_recommendations(request: RecommendationRequest):
             cost_preference=request.cost_preference,
             admission_rate_preference=request.admission_rate_preference,
             salary_preference=request.salary_preference,
-            fortune500_preference=request.fortune500_preference,
             number_of_recommendations=request.number_of_recommendations
         )
         
