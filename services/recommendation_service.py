@@ -100,9 +100,16 @@ def load_programs_data() -> pd.DataFrame:
     try:
         df = pd.read_csv(PATH_PROGRAMS)
         if "standard_college" in df.columns:
-            df["school_name_clean"] = df["standard_college"].str.lower().str.strip()
+            df["school_name_clean"] = df["standard_college"].astype(str).str.lower().str.strip()
         else:
-            df["school_name_clean"] = df["name"].str.lower().str.strip()
+            df["school_name_clean"] = df["name"].astype(str).str.lower().str.strip()
+        
+        # Ensure earnings columns are numeric
+        if "earn_mdn_1yr" in df.columns:
+            df["earn_mdn_1yr"] = pd.to_numeric(df["earn_mdn_1yr"], errors='coerce')
+        if "earn_mdn_5yr" in df.columns:
+            df["earn_mdn_5yr"] = pd.to_numeric(df["earn_mdn_5yr"], errors='coerce')
+            
         print("Programs data loaded and preprocessed.")
         return df
     except Exception as e:
@@ -807,7 +814,7 @@ def recommend_schools(
                 # For <10% admission, even a score-based "Match" is very tough.
                 # "Strong Match" should definitely become "Match (Selective)" or "Reach (Selective)"
                 # "Match" could become "Match (Selective)" or "Reach (Selective)"
-                # "Safety"/"Far Safety" (student well above) could become "Match (Selective)" or stay "Safety (Selective)" if still realistic
+                # "Safety/"Far Safety" (student well above) could become "Match (Selective)" or stay "Safety (Selective)" if still realistic
                 
                 # User rule: "only be labelled match if the student is really above or at their scores"
                 # User rule: "if the school is above then it should always be seen as a reach." (Covered by is_school_academically_harder)
