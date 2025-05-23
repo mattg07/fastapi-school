@@ -80,7 +80,12 @@ def load_colleges_data() -> pd.DataFrame:
         df["name_clean"] = df["name"].str.lower().str.strip()
         df["average_gpa"] = pd.to_numeric(df["average_gpa"], errors="coerce")
         df["average_sat_composite"] = pd.to_numeric(df["average_sat_composite"], errors="coerce")
-        # Add any other one-time transformations here
+        
+        # Clean and convert average_net_price
+        if "average_net_price" in df.columns:
+            df["average_net_price"] = df["average_net_price"].astype(str).str.replace(r'[\$,]', '', regex=True)
+            df["average_net_price"] = pd.to_numeric(df["average_net_price"], errors="coerce")
+            
         print("Colleges data loaded and preprocessed.")
         return df
     except Exception as e:
@@ -746,39 +751,90 @@ def recommend_schools(
 
         def calculate_gpa_tier(school_gpa, student_gpa):
             if pd.isnull(school_gpa) or student_gpa is None: return "Unknown"
-            diff = school_gpa - student_gpa
+            diff = school_gpa - student_gpa # Positive if school_gpa > student_gpa
             if abs(diff) <= GPA_MATCH_THRESHOLD_STRICT: return "Match"
-            if GPA_MATCH_THRESHOLD_STRICT < diff <= GPA_MATCH_THRESHOLD_LOOSE: return "Safety"
-            if -GPA_MATCH_THRESHOLD_LOOSE <= diff < -GPA_MATCH_THRESHOLD_STRICT: return "Reach"
-            if diff > GPA_MATCH_THRESHOLD_LOOSE : return "Far Safety" # School GPA much higher
-            if diff < -GPA_MATCH_THRESHOLD_LOOSE: return "Far Reach" # School GPA much lower
+            # School is harder for student (student is "reaching")
+            if GPA_MATCH_THRESHOLD_STRICT < diff <= GPA_MATCH_THRESHOLD_LOOSE: return "Reach" 
+            # School is easier for student (student stats are "safer")
+            if -GPA_MATCH_THRESHOLD_LOOSE <= diff < -GPA_MATCH_THRESHOLD_STRICT: return "Safety"
+            # School is much harder for student
+            if diff > GPA_MATCH_THRESHOLD_LOOSE : return "Far Reach" 
+            # School is much easier for student
+            if diff < -GPA_MATCH_THRESHOLD_LOOSE: return "Far Safety" 
             return "Unknown"
 
         def calculate_sat_tier(school_sat, student_sat):
             if pd.isnull(school_sat) or student_sat is None: return "Unknown"
-            diff = school_sat - student_sat
+            diff = school_sat - student_sat # Positive if school_sat > student_sat
             if abs(diff) <= SAT_MATCH_THRESHOLD_STRICT:
                 return "Match"
-            elif SAT_MATCH_THRESHOLD_STRICT < diff <= SAT_MATCH_THRESHOLD_LOOSE: return "Safety"
-            elif -SAT_MATCH_THRESHOLD_LOOSE <= diff < -SAT_MATCH_THRESHOLD_STRICT: return "Reach"
-            if diff > SAT_MATCH_THRESHOLD_LOOSE : return "Far Safety"
-            if diff < -SAT_MATCH_THRESHOLD_LOOSE: return "Far Reach"
+            # School is harder for student
+            elif SAT_MATCH_THRESHOLD_STRICT < diff <= SAT_MATCH_THRESHOLD_LOOSE: return "Reach"
+            # School is easier for student
+            elif -SAT_MATCH_THRESHOLD_LOOSE <= diff < -SAT_MATCH_THRESHOLD_STRICT: return "Safety"
+            # School is much harder
+            if diff > SAT_MATCH_THRESHOLD_LOOSE : return "Far Reach"
+            # School is much easier
+            if diff < -SAT_MATCH_THRESHOLD_LOOSE: return "Far Safety"
             return "Unknown"
 
         merged_df["gpa_tier_calc"] = merged_df.apply(lambda row: calculate_gpa_tier(row["Avg_GPA_School"], gpa), axis=1)
         merged_df["sat_tier_calc"] = merged_df.apply(lambda row: calculate_sat_tier(row["Avg_SAT_School"], effective_sat), axis=1)
 
-        # Simplified overall tier - prioritize Match, then Reach, then Safety
-        def determine_overall_tier(gpa_t, sat_t):
-            if gpa_t == "Match" and sat_t == "Match": return "Strong Match"
-            if gpa_t == "Match" or sat_t == "Match": return "Match"
-            if gpa_t == "Reach" or sat_t == "Reach": return "Reach"
-            if gpa_t == "Safety" or sat_t == "Safety": return "Safety"
-            if gpa_t == "Far Reach" or sat_t == "Far Reach": return "Far Reach"
-            if gpa_t == "Far Safety" or sat_t == "Far Safety": return "Far Safety"
-            return "Limited Academic Data"
+        # Tier determination with admission rate consideration
+        def determine_overall_tier(gpa_t, sat_t, admission_rate):
+            # Default tiers based on scores (using new labels)
+            # "Reach" means school is harder, "Safety" means school is easier.
+            calculated_tier = "Limited Academic Data" # Default if not enough info
+
+            if gpa_t == "Match" and sat_t == "Match": calculated_tier = "Strong Match"
+            elif gpa_t == "Match" or sat_t == "Match": calculated_tier = "Match"
+            elif gpa_t == "Reach" or sat_t == "Reach": calculated_tier = "Reach" # Student below school
+            elif gpa_t == "Safety" or sat_t == "Safety": calculated_tier = "Safety" # Student above school
+            elif gpa_t == "Far Reach" or sat_t == "Far Reach": calculated_tier = "Far Reach"
+            elif gpa_t == "Far Safety" or sat_t == "Far Safety": calculated_tier = "Far Safety"
+            elif gpa_t == "Unknown" or sat_t == "Unknown": calculated_tier = "Limited Academic Data"
+
+
+            # Apply admission rate override for highly selective schools
+            if admission_rate is not None and not pd.isna(admission_rate) and admission_rate < 0.10:
+                is_school_academically_harder = (gpa_t in ["Reach", "Far Reach"] or sat_t in ["Reach", "Far Reach"])
+                
+                if is_school_academically_harder:
+                    return "Reach (Selective)" # Override to a type of Reach due to high selectivity + school being harder
+                
+                # If student is at or above school scores (Match, Safety, Far Safety by scores)
+                # For <10% admission, even a score-based "Match" is very tough.
+                # "Strong Match" should definitely become "Match (Selective)" or "Reach (Selective)"
+                # "Match" could become "Match (Selective)" or "Reach (Selective)"
+                # "Safety"/"Far Safety" (student well above) could become "Match (Selective)" or stay "Safety (Selective)" if still realistic
+                
+                # User rule: "only be labelled match if the student is really above or at their scores"
+                # User rule: "if the school is above then it should always be seen as a reach." (Covered by is_school_academically_harder)
+
+                # If it was a "Strong Match" or "Match" by scores, it's still very competitive.
+                # Let's make these "Match (Selective)" to indicate good fit but high competition.
+                # If student scores are well above (Safety/Far Safety), this implies the student *might* have a chance
+                # despite selectivity, making it a "Match (Selective)" rather than "Safety" due to the low adm rate.
+                if calculated_tier in ["Strong Match", "Match", "Safety", "Far Safety"]:
+                     return "Match (Selective)"
+                # If it was already a "Reach" or "Far Reach", it remains so, possibly more intense.
+                # The is_school_academically_harder check already handles making these "Reach (Selective)".
+
+            return calculated_tier
         
-        merged_df["Recommendation_Tier"] = merged_df.apply(lambda row: determine_overall_tier(row["gpa_tier_calc"], row["sat_tier_calc"]), axis=1)
+        # Ensure 'Admission_Rate' is numeric before passing
+        merged_df["Admission_Rate_Numeric"] = pd.to_numeric(merged_df.get("ADM_RATE"), errors="coerce") # Prefer ADM_RATE from colleges
+        if 'ADM_RATE_sup' in merged_df.columns:
+             merged_df["Admission_Rate_Numeric"] = merged_df["Admission_Rate_Numeric"].fillna(pd.to_numeric(merged_df['ADM_RATE_sup'], errors='coerce'))
+        
+        # Fill any remaining NaNs in Admission_Rate_Numeric if necessary, or ensure it's handled in determine_overall_tier
+        # For simplicity, determine_overall_tier already checks for None/NaN admission_rate.
+
+        merged_df["Recommendation_Tier"] = merged_df.apply(
+            lambda row: determine_overall_tier(row["gpa_tier_calc"], row["sat_tier_calc"], row["Admission_Rate_Numeric"]), 
+            axis=1
+        )
 
         # 4. Prepare Output DataFrame - ensuring all Pydantic model fields
         recommendations = pd.DataFrame()
@@ -878,7 +934,12 @@ def recommend_schools(
             if verbose: print(f"Dropped duplicate schools, {len(recommendations)} unique schools remaining.")
         
         # Simple sort for now: by tier (custom sort order) then by a proxy for quality/fit if available
-        tier_order = ["Strong Match", "Match", "Reach", "Safety", "Far Reach", "Far Safety", "Limited Academic Data", "Unknown"]
+        tier_order = [
+            "Strong Match", "Match", "Match (Selective)", 
+            "Reach", "Reach (Selective)", "Safety", "Safety (Selective)", # Adjusted order
+            "Far Reach", "Far Safety", 
+            "Limited Academic Data", "Unknown"
+        ]
         recommendations["Recommendation_Tier"] = pd.Categorical(recommendations["Recommendation_Tier"], categories=tier_order, ordered=True)
         
         # Example secondary sort: higher salary, lower admission rate (more selective)
