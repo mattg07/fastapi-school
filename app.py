@@ -149,55 +149,56 @@ class RecommendationResponse(BaseModel):
 # Models (V2)
 # =====================================================
 class StudentProfileV2(BaseModel):
-    gpa: float = Field(..., example=3.7)
-    sat: Optional[int] = Field(None, example=1350)
-    act: Optional[float] = Field(None, example=29)
+    gpa: float = Field(..., example=3.7, description="Student's Grade Point Average.")
+    sat: Optional[int] = Field(None, example=1350, description="Student's SAT score. Provide either SAT or ACT.")
+    act: Optional[float] = Field(None, example=29, description="Student's ACT score. Will be converted to SAT equivalent if SAT is not provided.")
 
 class LocationPreferencesV2(BaseModel):
-    states: Optional[List[str]] = Field(None, example=["CA", "NY"])
-    region: Optional[str] = Field(None, example="Northeast")
+    states: Optional[List[str]] = Field(None, example=["CA", "NY"], description="List of preferred US states (2-letter codes).")
+    region: Optional[str] = Field(None, example="Northeast", description="Preferred US region (e.g., Northeast, West, Midwest, South, Southwest). Requires internal state-to-region mapping.")
+    # setting: Optional[str] = None # REMOVED from plan
 
 class CostPreferencesV2(BaseModel):
-    max_net_price_per_year: Optional[int] = Field(None, example=40000)
-    importance: str = Field("medium", example="high")
+    max_net_price_per_year: Optional[int] = Field(None, example=40000, description="Maximum affordable average net price per year.")
+    importance: str = Field("medium", example="high", description="Importance of cost: 'low', 'medium', or 'high'.")
 
 class PreferencesV2(BaseModel):
-    academic_focus: str = Field("match", example="challenge_me")
-    location: Optional[LocationPreferencesV2] = None
-    cost: Optional[CostPreferencesV2] = None
-    school_size: Optional[List[str]] = Field(None, example=["medium", "large"])
-    school_type: Optional[str] = Field(None, example="public")
-    career_outcomes_importance: str = Field("medium", example="high")
-    selectivity_preference: str = Field("any", example="moderate")
-    allow_fuzzy_program_match: bool = Field(False)
+    academic_focus: str = Field("match", example="challenge_me", description="Student's academic preference: 'match' (scores similar to school avg), 'challenge_me' (school avg higher), 'less_stress' (school avg lower).")
+    location: Optional[LocationPreferencesV2] = Field(None, description="Student's location preferences.")
+    cost: Optional[CostPreferencesV2] = Field(None, description="Student's cost preferences.")
+    school_size: Optional[List[str]] = Field(None, example=["medium", "large"], description="Preferred school sizes: 'small', 'medium', 'large'. Based on defined enrollment thresholds.")
+    school_type: Optional[str] = Field(None, example="public", description="Preferred school type: 'public', 'private', or 'any'.")
+    career_outcomes_importance: str = Field("medium", example="high", description="Importance of career outcomes (salary, hirers): 'low', 'medium', 'high'.")
+    selectivity_preference: str = Field("any", example="moderate", description="Preference for school selectivity: 'any', 'moderate' (mid-range admission rates), 'high_challenge' (low admission rates).")
+    allow_fuzzy_program_match: bool = Field(False, description="Allow fuzzy matching for program_query if an exact match is not found. Use with caution.")
 
 class RecommendationRequestV2(BaseModel):
     student_profile: StudentProfileV2
-    program_query: str = Field(..., example="Computer Science")
+    program_query: str = Field(..., example="Computer Science", description="Desired program of study. Expected to be an exact name from the list provided by /v2/programs.")
     preferences: PreferencesV2
-    number_of_recommendations: int = Field(10, gt=0, le=50) # Max 50 as per discussion
+    number_of_recommendations: int = Field(10, gt=0, le=50, description="Number of recommendations to return (max 50).")
 
 class RecommendationV2(BaseModel): 
-    School: str 
-    Program_Name: str
-    V2_Recommendation_Tier: str
-    Composite_Score: float
-    Why_This_School_Snippet: Optional[str] = None
+    School: str = Field(..., description="Display name of the recommended school.")
+    Program_Name: str = Field(..., description="The specific program matched at this school.")
+    V2_Recommendation_Tier: str = Field(..., description="V2 descriptive recommendation tier (e.g., 'Excellent Fit', 'Good Match').")
+    Composite_Score: float = Field(..., description="Overall suitability score (0-1) calculated by the V2 algorithm.")
+    Why_This_School_Snippet: Optional[str] = Field(None, description="Brief explanation highlighting key strengths for the student.")
     
-    Recommendation_Tier: Optional[str] = None 
-    Has_Salary_Data: Optional[bool] = None
-    Median_Earnings_1yr: Optional[float] = None
-    Median_Earnings_5yr: Optional[float] = None
-    Avg_GPA: Optional[float] = None
-    Avg_SAT: Optional[float] = None
-    Fortune500_Hirers: List[Dict[str, Any]] = []
-    Total_Enrollment: Optional[int] = None
-    Admission_Rate: Optional[float] = None
-    Avg_Net_Price: Optional[float] = None
-    Latitude: Optional[float] = None
-    Longitude: Optional[float] = None
-    Admission_Statistics: Optional[List[AdmissionYearStats]] = None
-    Undergraduate_Enrollment: Optional[int] = None
+    Recommendation_Tier: Optional[str] = Field(None, description="V1-like tier, potentially mapped from V2_Recommendation_Tier for compatibility.")
+    Has_Salary_Data: Optional[bool] = Field(None, description="Indicates if program-specific salary data (1yr or 5yr) is available.")
+    Median_Earnings_1yr: Optional[float] = Field(None, description="Median earnings 1 year after graduation for this specific program at this school.")
+    Median_Earnings_5yr: Optional[float] = Field(None, description="Median earnings 5 years after graduation for this specific program at this school.")
+    Avg_GPA: Optional[float] = Field(None, description="Average GPA of admitted students at the school.")
+    Avg_SAT: Optional[float] = Field(None, description="Average SAT score of admitted students at the school.")
+    Fortune500_Hirers: List[Dict[str, Any]] = Field([], description="List of Fortune 500 companies hiring from this school, with alumni counts.")
+    Total_Enrollment: Optional[int] = Field(None, description="Total student enrollment at the school.")
+    Admission_Rate: Optional[float] = Field(None, description="Overall admission rate of the school (0.0 to 1.0).")
+    Avg_Net_Price: Optional[float] = Field(None, description="Average annual net price (cost of attendance after aid). Tuitition data.")
+    Latitude: Optional[float] = Field(None)
+    Longitude: Optional[float] = Field(None)
+    Admission_Statistics: Optional[List[AdmissionYearStats]] = Field(None, description="Historical admission statistics for the school.")
+    Undergraduate_Enrollment: Optional[int] = Field(None)
     White_Enrollment_Percent: Optional[float] = None
     Black_Enrollment_Percent: Optional[float] = None
     Hispanic_Enrollment_Percent: Optional[float] = None
@@ -205,21 +206,21 @@ class RecommendationV2(BaseModel):
     gpa_link: Optional[str] = None
     type_of_institution: Optional[str] = None
     level_of_institution: Optional[str] = None
-    school_name_clean_key: Optional[str] = None 
+    school_name_clean_key: Optional[str] = Field(None, description="Internal cleaned name of the school used for matching.") 
 
-    s_academic: Optional[float] = None
-    s_program_outcome: Optional[float] = None
-    s_affordability: Optional[float] = None
-    s_location: Optional[float] = None
-    s_selectivity: Optional[float] = None
-    s_environment: Optional[float] = None
-    s_career: Optional[float] = None
+    s_academic: Optional[float] = Field(None, description="Sub-score for academic fit (0-1).")
+    s_program_outcome: Optional[float] = Field(None, description="Sub-score for program outcomes (e.g., salary) (0-1).")
+    s_affordability: Optional[float] = Field(None, description="Sub-score for affordability (0-1).")
+    s_location: Optional[float] = Field(None, description="Sub-score for location preference match (0-1).")
+    s_selectivity: Optional[float] = Field(None, description="Sub-score for school selectivity preference match (0-1).")
+    s_environment: Optional[float] = Field(None, description="Sub-score for school environment preference match (0-1).")
+    s_career: Optional[float] = Field(None, description="Sub-score for career opportunities (0-1).")
 
 class RecommendationResponseV2(BaseModel):
     recommendations: List[RecommendationV2]
     query_details: RecommendationRequestV2 
     timestamp: str
-    total_schools_considered: int 
+    total_schools_considered: int = Field(..., description="Total number of unique school-program pairs considered after initial filtering.")
     total_recommendations_returned: int
 
 # Models for V1 school statistics endpoints (ensure they remain)
@@ -380,7 +381,10 @@ async def get_recommendations(request: RecommendationRequest):
         )
 
 # --- V2 Endpoint ---
-@app.post("/v2/recommendations", response_model=RecommendationResponseV2)
+@app.post("/v2/recommendations", response_model=RecommendationResponseV2,
+          summary="Generate V2 University Recommendations",
+          description="Generates advanced V2 university recommendations based on a multi-factor scoring algorithm, user profile, and detailed preferences. Aims to provide more nuanced and personalized results including \"Why this school?\" explanations."
+)
 async def get_recommendations_v2(request: RecommendationRequestV2):
     """
     Generates V2 university recommendations based on multi-factor scoring.
@@ -432,7 +436,7 @@ async def get_recommendations_v2(request: RecommendationRequestV2):
                 "Composite_Score": rec_data.get("composite_score", 0.0),
                 "Why_This_School_Snippet": rec_data.get("Why_This_School_Snippet"),
                 
-                "Recommendation_Tier": rec_data.get("V2_Recommendation_Tier"), # Mapping V2 tier to V1 for now
+                "Recommendation_Tier": rec_data.get("V2_Recommendation_Tier"), 
                 "Has_Salary_Data": bool(pd.notna(rec_data.get("earn_mdn_1yr")) or pd.notna(rec_data.get("earn_mdn_5yr"))),
                 "Median_Earnings_1yr": rec_data.get("earn_mdn_1yr"),
                 "Median_Earnings_5yr": rec_data.get("earn_mdn_5yr"),
@@ -442,14 +446,14 @@ async def get_recommendations_v2(request: RecommendationRequestV2):
                 "Total_Enrollment": rec_data.get("number_of_students"),
                 "Admission_Rate": rec_data.get("acceptance_rate"), 
                 "Avg_Net_Price": rec_data.get("average_net_price"),
-                "Latitude": rec_data.get("LATITUDE"),
-                "Longitude": rec_data.get("LONGITUDE"),
+                "Latitude": rec_data.get("LATITUDE_processed"),
+                "Longitude": rec_data.get("LONGITUDE_processed"),
                 "Admission_Statistics": admission_stats_data,
-                "Undergraduate_Enrollment": rec_data.get("UGDS"),
-                "White_Enrollment_Percent": rec_data.get("UGDS_WHITE"),
-                "Black_Enrollment_Percent": rec_data.get("UGDS_BLACK"),
-                "Hispanic_Enrollment_Percent": rec_data.get("UGDS_HISP"),
-                "Asian_Enrollment_Percent": rec_data.get("UGDS_ASIAN"),
+                "Undergraduate_Enrollment": rec_data.get("UGDS_processed"),
+                "White_Enrollment_Percent": rec_data.get("UGDS_WHITE_processed"),
+                "Black_Enrollment_Percent": rec_data.get("UGDS_BLACK_processed"),
+                "Hispanic_Enrollment_Percent": rec_data.get("UGDS_HISP_processed"),
+                "Asian_Enrollment_Percent": rec_data.get("UGDS_ASIAN_processed"),
                 "gpa_link": rec_data.get("gpa_link"),
                 "type_of_institution": rec_data.get("type_of_institution"),
                 "level_of_institution": rec_data.get("level_of_institution"),

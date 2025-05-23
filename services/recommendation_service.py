@@ -77,15 +77,29 @@ def load_colleges_data() -> pd.DataFrame:
         return pd.DataFrame()
     try:
         df = pd.read_csv(PATH_COLLEGES)
-        df["name_clean"] = df["name"].str.lower().str.strip()
+        df["name_clean"] = df["name"].astype(str).str.lower().str.strip()
         df["average_gpa"] = pd.to_numeric(df["average_gpa"], errors="coerce")
         df["average_sat_composite"] = pd.to_numeric(df["average_sat_composite"], errors="coerce")
         
-        # Clean and convert average_net_price
         if "average_net_price" in df.columns:
             df["average_net_price"] = df["average_net_price"].astype(str).str.replace(r'[\$,]', '', regex=True)
             df["average_net_price"] = pd.to_numeric(df["average_net_price"], errors="coerce")
-            
+
+        # Clean and convert number_of_students
+        if "number_of_students" in df.columns:
+            df["number_of_students"] = df["number_of_students"].astype(str).str.replace(r',', '', regex=False)
+            df["number_of_students"] = pd.to_numeric(df["number_of_students"], errors='coerce')
+        
+        # Clean and convert acceptance_rate (ensure it's 0-1 decimal)
+        if "acceptance_rate" in df.columns:
+            # Convert to string, remove %, then to numeric
+            df["acceptance_rate"] = df["acceptance_rate"].astype(str).str.rstrip('%').replace('N/A', str(np.nan))
+            df["acceptance_rate"] = pd.to_numeric(df["acceptance_rate"], errors='coerce')
+            # If values are like 50 (for 50%), convert to 0.50
+            df.loc[(df["acceptance_rate"] > 1) & (df["acceptance_rate"] <= 100), "acceptance_rate"] /= 100.0
+            df.loc[df["acceptance_rate"] > 1, "acceptance_rate"] = np.nan # Invalid rates > 100% or > 1 after conversion
+            df.loc[df["acceptance_rate"] < 0, "acceptance_rate"] = np.nan # Invalid negative rates
+
         print("Colleges data loaded and preprocessed.")
         return df
     except Exception as e:

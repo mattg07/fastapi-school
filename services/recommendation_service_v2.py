@@ -181,26 +181,45 @@ def calculate_location_score(school_state: Optional[str], school_city: Optional[
     
     return score
 
-def calculate_selectivity_score(school_acceptance_rate: Optional[float], selectivity_preference: str) -> float:
-    if pd.isna(school_acceptance_rate):
-        return 0.5 # Neutral if unknown
+def calculate_selectivity_score(school_acceptance_rate_input: Optional[Any], selectivity_preference: str) -> float:
+    # Input can be float, int, string (e.g., "50%", "0.5", "N/A"), or None/NaN
+    
+    # DEBUG PRINT (can be enabled if issues persist)
+    # print(f"DEBUG calculate_selectivity_score INPUT: rate_input='{school_acceptance_rate_input}' (type: {type(school_acceptance_rate_input)}), pref='{selectivity_preference}'")
+
+    if pd.isna(school_acceptance_rate_input) or str(school_acceptance_rate_input).strip().lower() in ["nan", "na", "n/a", "", "--"]:
+        # print(f"DEBUG calculate_selectivity_score: rate is effectively NaN/None, returning 0.5")
+        return 0.5 # Neutral if unknown or unparseable to a number
+
+    rate_str = str(school_acceptance_rate_input).replace('%', '').strip()
+    numeric_rate = pd.to_numeric(rate_str, errors='coerce')
+
+    if pd.isna(numeric_rate):
+        # print(f"DEBUG calculate_selectivity_score: could not convert '{rate_str}' to numeric, returning 0.5")
+        return 0.5 # Still NaN after trying to parse, return neutral
+
+    # At this point, numeric_rate is a float/int
+    rate = numeric_rate
+    if rate > 1.0 and rate <= 100.0: # Handles if rate is in percent form e.g. 50.0
+        rate = rate / 100.0
+    
+    # Ensure rate is clipped to 0-1 range after potential division
+    rate = float(np.clip(rate, 0.0, 1.0))
+
+    # print(f"DEBUG calculate_selectivity_score AFTER processing: final_rate={rate}, pref='{selectivity_preference}'")
 
     if selectivity_preference == "any":
-        return 1.0 # Not a factor for this user, so max contribution
-    
-    # Ensure rate is 0-1
-    rate = school_acceptance_rate
-    if rate > 1.0 and rate <=100.0: # Handles if rate is in percent form
-        rate = rate / 100.0
-    rate = np.clip(rate, 0.0, 1.0)
-
-    if selectivity_preference == "moderate":
-        # Gaussian-like score, peak at 0.4 (40% acceptance), tapers off
-        return float(np.clip(np.exp(-((rate - 0.4)**2) / (2 * 0.15**2)), 0,1))
+        return 1.0 
+    elif selectivity_preference == "moderate":
+        score = float(np.clip(np.exp(-((rate - 0.4)**2) / (2 * 0.15**2)), 0.0, 1.0))
+        # print(f"DEBUG calculate_selectivity_score MODERATE final score for rate {rate}: {score}")
+        return score
     elif selectivity_preference == "high_challenge":
-        # Lower acceptance rate is better (score = 1 - rate)
-        return float(np.clip(1.0 - rate, 0,1))
-    return 0.5 # Default for unhandled preference
+        score = float(np.clip(1.0 - rate, 0.0, 1.0))
+        # print(f"DEBUG calculate_selectivity_score HIGH_CHALLENGE final score for rate {rate}: {score}")
+        return score
+    
+    return 0.5 # Default for unhandled preference or if logic somehow misses
 
 def get_school_size_category(num_students: Optional[float]) -> Optional[str]:
     if pd.isna(num_students):
@@ -211,32 +230,35 @@ def get_school_size_category(num_students: Optional[float]) -> Optional[str]:
 
 def calculate_environment_score(school_type: Optional[str], school_num_students: Optional[float],
                                 preferred_school_type: Optional[str], preferred_school_sizes: Optional[List[str]]) -> float:
-    type_score = 0.5
-    size_score = 0.5
-    prefs_counted = 0
+    scores = []
+    
+    has_type_preference = preferred_school_type and preferred_school_type.lower() != "any"
+    has_size_preference = preferred_school_sizes and len(preferred_school_sizes) > 0
+
+    if not has_type_preference and not has_size_preference:
+        return 1.0 # No relevant preferences, perfect score for this factor
 
     school_size_category = get_school_size_category(school_num_students)
 
-    if preferred_school_type and preferred_school_type != "any":
-        prefs_counted += 1
-        if school_type and school_type.lower() == preferred_school_type.lower():
-            type_score = 1.0
+    if has_type_preference:
+        if pd.notna(school_type) and school_type.lower() == preferred_school_type.lower():
+            scores.append(1.0)
         else:
-            type_score = 0.0
-    else:
-        type_score = 1.0 # No preference means it's a match
-
-    if preferred_school_sizes:
-        prefs_counted += 1
-        if school_size_category and school_size_category in preferred_school_sizes:
-            size_score = 1.0
+            scores.append(0.0) 
+    
+    if has_size_preference:
+        if pd.notna(school_size_category) and school_size_category in preferred_school_sizes:
+            scores.append(1.0)
         else:
-            size_score = 0.0
-    else:
-        size_score = 1.0 # No preference means it's a match
+            scores.append(0.0)
+    
+    if not scores: 
+        # This case should ideally not be reached if has_type_preference or has_size_preference was true.
+        # It implies preferences were specified but resulted in no scores being added (e.g. invalid pref values not caught earlier).
+        # Returning a neutral 0.5 might be safer than an error or 0.0.
+        return 0.5 
         
-    if prefs_counted == 0: return 1.0 # No env preferences, perfect match
-    return float(np.clip((type_score + size_score) / prefs_counted if prefs_counted > 0 else 1.0 , 0, 1))
+    return float(np.mean(scores))
 
 def calculate_career_opportunities_score(school_name_clean: str, norm_stats_hirers: Dict[str, float]) -> float:
     if not SCHOOL_TO_COMPANIES_V2 or school_name_clean not in SCHOOL_TO_COMPANIES_V2:
@@ -416,21 +438,64 @@ def recommend_schools_v2(student_profile: Dict, program_query: str, preferences:
     results = []
     for _, row in merged_df.iterrows():
         school_data = row.to_dict()
-        school_name_clean = str(school_data["school_name_clean"])
+        school_name_clean = str(school_data.get("school_name_clean"))
         
-        # Data for scoring
+        # Extract and clean data for scoring, handling potential suffixes from merges
+        # Suffixes from DF_COLLEGES_V2 merge would be _coll, from DF_SCHOOL_SUP_V2 (if merged later) would be _sup
+        # Current merged_df has suffixes _prog_earn and _coll. DF_SCHOOL_SUP_V2 is not directly merged into this loop's `merged_df` yet.
+        # We should source UGDS and demographics from DF_SCHOOL_SUP_V2 by merging it or looking up.
+        # For now, let's assume UGDS and demographics might be in DF_COLLEGES_V2 or added via a separate merge not yet in this skeleton.
+        # If they are from DF_COLLEGES_V2, they would not have _sup suffix yet.
+
         school_avg_gpa = pd.to_numeric(school_data.get("average_gpa"), errors='coerce')
         school_avg_sat = pd.to_numeric(school_data.get("average_sat_composite"), errors='coerce')
-        program_earn_1yr = pd.to_numeric(school_data.get("earn_mdn_1yr"), errors='coerce')
-        program_earn_5yr = pd.to_numeric(school_data.get("earn_mdn_5yr"), errors='coerce')
+        program_earn_1yr = pd.to_numeric(school_data.get("earn_mdn_1yr"), errors='coerce') # from program_earnings_df merge
+        program_earn_5yr = pd.to_numeric(school_data.get("earn_mdn_5yr"), errors='coerce') # from program_earnings_df merge
         school_net_price = pd.to_numeric(school_data.get("average_net_price"), errors='coerce')
+        school_num_students_for_calc = pd.to_numeric(school_data.get("number_of_students"), errors='coerce') 
+        current_school_acceptance_rate_for_calc = pd.to_numeric(school_data.get("acceptance_rate"), errors='coerce')
+
         school_state_full = str(school_data.get("location", ""))
         school_state = school_state_full.split(",")[-1].strip() if pd.notna(school_state_full) and "," in school_state_full else None
-        school_acceptance_rate = pd.to_numeric(school_data.get("acceptance_rate"), errors='coerce')
         school_type = str(school_data.get("type_of_institution", ""))
-        school_num_students = pd.to_numeric(school_data.get("number_of_students"), errors='coerce')
 
-        # Calculate scores
+        # Add Latitude and Longitude (assuming direct names from DF_COLLEGES_V2)
+        # These might have _coll suffix if 'LATITUDE' also existed in the left part of a merge, but unlikely for these specific names.
+        school_data['LATITUDE_processed'] = pd.to_numeric(school_data.get('LATITUDE', school_data.get('LATITUDE_coll')), errors='coerce')
+        school_data['LONGITUDE_processed'] = pd.to_numeric(school_data.get('LONGITUDE', school_data.get('LONGITUDE_coll')), errors='coerce')
+
+        # For UGDS and Demographics, these primarily come from DF_SCHOOL_SUP_V2.
+        # We need to fetch them by looking up the school_name_clean in DF_SCHOOL_SUP_V2.
+        sup_data_row = DF_SCHOOL_SUP_V2[DF_SCHOOL_SUP_V2["school_name_clean"] == school_name_clean]
+        if not sup_data_row.empty:
+            sup_row = sup_data_row.iloc[0]
+            school_data['UGDS_processed'] = pd.to_numeric(str(sup_row.get("UGDS")).replace(',',''), errors='coerce')
+            school_data['UGDS_WHITE_processed'] = pd.to_numeric(sup_row.get("UGDS_WHITE"), errors='coerce')
+            school_data['UGDS_BLACK_processed'] = pd.to_numeric(sup_row.get("UGDS_BLACK"), errors='coerce')
+            school_data['UGDS_HISP_processed'] = pd.to_numeric(sup_row.get("UGDS_HISP"), errors='coerce')
+            school_data['UGDS_ASIAN_processed'] = pd.to_numeric(sup_row.get("UGDS_ASIAN"), errors='coerce')
+            # Fallback for Lat/Lon if not in DF_COLLEGES_V2
+            if pd.isna(school_data['LATITUDE_processed']): 
+                school_data['LATITUDE_processed'] = pd.to_numeric(sup_row.get('LATITUDE'), errors='coerce')
+            if pd.isna(school_data['LONGITUDE_processed']):
+                school_data['LONGITUDE_processed'] = pd.to_numeric(sup_row.get('LONGITUDE'), errors='coerce')
+        else:
+            school_data['UGDS_processed'] = np.nan
+            school_data['UGDS_WHITE_processed'] = np.nan
+            # ... and other demographics to NaN
+            school_data['UGDS_BLACK_processed'] = np.nan
+            school_data['UGDS_HISP_processed'] = np.nan
+            school_data['UGDS_ASIAN_processed'] = np.nan
+
+        # DEBUG for Stanford 
+        if school_name_clean == "stanford university":
+            print(f"DEBUG Stanford Env (Pre-Call Values): school_type='{school_type}', school_num_students_for_calc={school_num_students_for_calc} (type: {type(school_num_students_for_calc)})")
+            print(f"DEBUG Stanford Env (Pre-Call): pref_type='{preferences.get('school_type')}', pref_sizes={preferences.get('school_size')}")
+            temp_school_size_category = get_school_size_category(school_num_students_for_calc)
+            print(f"DEBUG Stanford Env (Pre-Call): derived_size_category='{temp_school_size_category}'")
+            print(f"DEBUG Stanford Env (Pre-Call): school_acceptance_rate_for_selectivity_call={current_school_acceptance_rate_for_calc} (type: {type(current_school_acceptance_rate_for_calc)})")
+            print(f"DEBUG Stanford Sup Data: UGDS={school_data.get('UGDS_processed')}, Lat={school_data.get('LATITUDE_processed')}")
+
         s_academic = calculate_academic_fit_score(
             student_profile["gpa"], student_profile.get("effective_sat"),
             school_avg_gpa, school_avg_sat,
@@ -448,12 +513,16 @@ def recommend_schools_v2(student_profile: Dict, program_query: str, preferences:
             school_state, None, # school_city not used yet
             preferences.get("location", {}).get("states"), preferences.get("location", {}).get("region")
         )
+        
         s_selectivity = calculate_selectivity_score(
-            school_acceptance_rate, preferences.get("selectivity_preference", "any")
+            current_school_acceptance_rate_for_calc, 
+            preferences.get("selectivity_preference", "any")
         )
         s_environment = calculate_environment_score(
-            school_type, school_num_students, # Pass num_students directly
-            preferences.get("school_type"), preferences.get("school_size")
+            school_type, 
+            school_num_students_for_calc, 
+            preferences.get("school_type"), 
+            preferences.get("school_size")
         )
         s_career = calculate_career_opportunities_score(school_name_clean, norm_stats_hirers)
 
@@ -475,13 +544,16 @@ def recommend_schools_v2(student_profile: Dict, program_query: str, preferences:
         if pd.notna(raw_acceptance_rate):
             rate_str = str(raw_acceptance_rate).replace('%','')
             numeric_rate = pd.to_numeric(rate_str, errors='coerce')
-            if pd.notna(numeric_rate) and numeric_rate > 1: # Assuming it's a percentage like 50 not 0.50
-                school_data["acceptance_rate"] = numeric_rate / 100.0
-            elif pd.notna(numeric_rate): # Already a decimal
-                school_data["acceptance_rate"] = numeric_rate
-            else:
-                school_data["acceptance_rate"] = np.nan # Coercion failed
-        else:
+            if pd.notna(numeric_rate):
+                if numeric_rate > 1.0 and numeric_rate <=100.0: # Check if it looks like a percentage e.g. 50.0
+                    school_data["acceptance_rate"] = numeric_rate / 100.0
+                elif numeric_rate >= 0.0 and numeric_rate <= 1.0: # Already a decimal
+                    school_data["acceptance_rate"] = numeric_rate
+                else: # Unusual number, treat as NaN or log warning
+                    school_data["acceptance_rate"] = np.nan 
+            else: # pd.to_numeric resulted in NaN
+                school_data["acceptance_rate"] = np.nan 
+        else: # raw_acceptance_rate was NaN to begin with
             school_data["acceptance_rate"] = np.nan
             
         # UGDS and demographic percentages should ideally also be cleaned if sourced from raw strings
@@ -501,23 +573,53 @@ def recommend_schools_v2(student_profile: Dict, program_query: str, preferences:
             s_career * adjusted_weights["career_ops"]
         )
         
-        result_item = {**school_data} 
+        result_item = {**school_data}
         result_item.update({
-            "program_name": matched_program_name, # Ensure this is the canonical matched program
+            "school_name_clean_key": school_name_clean, 
+            "program_name": matched_program_name, 
             "composite_score": composite_score,
             "s_academic": s_academic, "s_program_outcome": s_program_outcome, "s_affordability": s_affordability,
-            "s_location": s_location, "s_selectivity": s_selectivity, "s_environment": s_environment, "s_career": s_career
+            "s_location": s_location, "s_selectivity": s_selectivity, "s_environment": s_environment, "s_career": s_career,
+            "LATITUDE": school_data.get('LATITUDE_processed'), 
+            "LONGITUDE": school_data.get('LONGITUDE_processed'),
+            "UGDS": school_data.get('UGDS_processed'),
+            "UGDS_WHITE": school_data.get('UGDS_WHITE_processed'),
+            "UGDS_BLACK": school_data.get('UGDS_BLACK_processed'),
+            "UGDS_HISP": school_data.get('UGDS_HISP_processed'),
+            "UGDS_ASIAN": school_data.get('UGDS_ASIAN_processed')
         })
+        
+        # Populate Fortune500_Hirers and Admission_Statistics for the result_item directly
+        # This ensures they are in the dict before DataFrame creation, which helps app.py mapping
+        result_item["Fortune500_Hirers"] = sorted([{"company_name": k, "alumni_count": v} for k,v in SCHOOL_TO_COMPANIES_V2.get(school_name_clean, {}).items()], key=lambda x: x["company_name"])
+        result_item["Admission_Statistics"] = get_admission_statistics_v2(school_name_clean)
+
+        if school_name_clean == "stanford university":
+            print(f"DEBUG Stanford result_item check: s_environment in dict is {result_item.get('s_environment')}")
+            print(f"DEBUG Stanford result_item check: Fortune500_Hirers in dict: {result_item.get('Fortune500_Hirers')}")
+            # print(f"DEBUG Stanford full result_item before append: {result_item}")
+
         results.append(result_item)
 
     if not results:
         print("No schools after scoring.")
-        return pd.DataFrame(), 0
+        return pd.DataFrame(), initial_candidate_count 
 
     ranked_df = pd.DataFrame(results).sort_values(by="composite_score", ascending=False)
 
+    # DEBUG: Check dtype and Stanford's s_environment in DataFrame
+    if not ranked_df.empty and "s_environment" in ranked_df.columns:
+        print(f"DEBUG DataFrame: s_environment dtype: {ranked_df['s_environment'].dtype}")
+        stanford_row_in_df = ranked_df[ranked_df["school_name_clean_key"] == "stanford university"]
+        if not stanford_row_in_df.empty:
+            print(f"DEBUG DataFrame: Stanford s_environment: {stanford_row_in_df['s_environment'].iloc[0]}")
+            print(f"DEBUG DataFrame: Stanford Fortune500_Hirers: {stanford_row_in_df['Fortune500_Hirers'].iloc[0]}") # Debug hirers in DF
+        uiuc_row_in_df = ranked_df[ranked_df["school_name_clean_key"] == "university of illinois urbanachampaign"]
+        if not uiuc_row_in_df.empty:
+            print(f"DEBUG DataFrame: UIUC s_environment: {uiuc_row_in_df['s_environment'].iloc[0]}")
+
     # --- Phase 3: Post-Processing & Output ---
-    final_recommendations = ranked_df.head(number_of_recommendations).copy() # Use .copy() to avoid SettingWithCopyWarning
+    final_recommendations = ranked_df.head(number_of_recommendations).copy()
     
     # Add "Why this school?" snippets
     # More sophisticated logic needed here based on dominant scores vs. preferences
@@ -547,11 +649,6 @@ def recommend_schools_v2(student_profile: Dict, program_query: str, preferences:
         final_recommendations["V2_Recommendation_Tier"] = final_recommendations["composite_score"].apply(assign_v2_tier)
     else:
         final_recommendations["V2_Recommendation_Tier"] = pd.Series(dtype='str')
-
-    if not final_recommendations.empty:
-        final_recommendations["Admission_Statistics"] = final_recommendations["school_name_clean"].apply(
-            lambda snc: get_admission_statistics_v2(snc) if pd.notna(snc) else [] 
-        )
 
     print(f"V2: Returning {len(final_recommendations)} recommendations.")
     return final_recommendations, len(merged_df)

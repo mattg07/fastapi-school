@@ -4,7 +4,9 @@ A FastAPI-based service that provides university recommendations based on academ
 
 ## Key Features
 
--   **Personalized University Recommendations**: Based on GPA, SAT/ACT scores, program of interest, and user preferences (location, cost, admission rate, salary).
+-   **Personalized University Recommendations**:
+    -   **V1 (`/recommendations`)**: Based on GPA, SAT/ACT scores, program of interest, and basic user preferences.
+    -   **V2 (`/v2/recommendations`)**: Advanced multi-factor scoring system considering academic fit, program-specific outcomes (earnings), affordability, location, school selectivity, environment, and career opportunities. Highly personalized based on detailed user preferences and provides qualitative explanations ("Why this school?").
 -   **Detailed School Statistics**: Retrieve comprehensive information for a specific school, including:
     -   General academic data (average GPA, SAT, admission rates).
     -   Demographics and enrollment figures.
@@ -22,7 +24,8 @@ A FastAPI-based service that provides university recommendations based on academ
 university-recommendation-server/
 ├── app.py                            # Main FastAPI application
 ├── services/                         # Business logic
-│   ├── recommendation_service.py     # Core recommendation and statistics logic
+│   ├── recommendation_service.py     # Core V1 recommendation and statistics logic
+│   ├── recommendation_service_v2.py  # V2 multi-factor recommendation logic
 │   └── act_sat_conversion.py         # Utility for ACT/SAT score conversion
 ├── recommendation-algo-2/            # Data files (CSV)
 │   ├── colleges_data_cleaned.csv
@@ -32,12 +35,14 @@ university-recommendation-server/
 │   ├── admission_trends_cleaned.csv
 │   └── school_plus_image_data_cleaned.csv # Image URLs
 ├── tests/                            # Pytest test suite
-│   ├── test_app.py                   # API endpoint tests
+│   ├── test_app.py                   # API endpoint tests (covers V1 and can be extended for V2)
+│   ├── test_recommendation_service_v2.py # Unit tests for V2 scoring logic
 │   ├── test_quality_recommendations.py # Script to generate a text report for recommendation quality review
 │   └── ...                           # Other test files (e.g., stat_test.py)
 ├── Dockerfile                        # Docker configuration
 ├── docker-compose.yml                # Docker Compose configuration
 ├── requirements.txt                  # Python dependencies
+├── plan_v2_recommendations.md        # Detailed plan for the V2 recommendation system
 └── README.md                         # This file
 ```
 
@@ -86,15 +91,21 @@ The API will be available at `http://localhost:8000`.
 
 ## API Endpoints
 
+Access interactive API documentation for all endpoints:
+-   Swagger UI: `http://localhost:8000/docs`
+-   ReDoc: `http://localhost:8000/redoc`
+
+### Version 1 Endpoints (Stable)
+
 -   `GET /`: API information.
 -   `GET /health`: Health check.
 -   `GET /programs`: Lists all available academic programs.
--   `POST /recommendations`: Generates university recommendations.
+-   `POST /recommendations`: Generates V1 university recommendations.
     -   **Body**: `RecommendationRequest` model.
--   `GET /school/{school_name_query}`: Provides comprehensive statistics for the queried school (including image URLs).
-    -   **Path Parameter**: `school_name_query`.
+    -   **Response**: `RecommendationResponse` model.
+-   `GET /school/{school_name_query}`: Provides comprehensive statistics for the queried school.
     -   **Response**: `SchoolStatsResponse` model.
--   `GET /school/{school_name_query}/academics`: Provides academic stats (GPA, SAT, admission rate) and image URLs.
+-   `GET /school/{school_name_query}/academics`: Provides academic stats and image URLs.
     -   **Response**: `SchoolAcademicStatsResponse` model.
 -   `GET /school/{school_name_query}/salary`: Provides average program salary stats.
     -   **Response**: `SchoolSalaryStatsResponse` model.
@@ -106,9 +117,16 @@ The API will be available at `http://localhost:8000`.
     -   **Response**: `SchoolHirerStatsResponse` model.
 -   `GET /program_coverage`: Returns a count of how many schools match each program.
 
-Access interactive API documentation:
--   Swagger UI: `http://localhost:8000/docs`
--   ReDoc: `http://localhost:8000/redoc`
+### Version 2 Endpoints (New & Under Development)
+
+-   **`POST /v2/recommendations`**: Generates advanced V2 university recommendations using a multi-factor scoring and personalization engine.
+    -   **Request Body**: `RecommendationRequestV2` model (see `app.py` or API docs for details on `student_profile` and `preferences` structure).
+    -   **Response Body**: `RecommendationResponseV2` model, including composite scores, new tier labels, "Why this school?" explanations, individual sub-scores, and V1-compatible fields.
+    -   *Note: Full capabilities of preferences (e.g., region, school size/type) are dependent on data richness and ongoing tuning of the V2 algorithm as detailed in `plan_v2_recommendations.md`.*
+
+-   *(Future V2 Endpoints - as per plan_v2_recommendations.md)*
+    -   *`GET /v2/programs` (potentially with enhanced program info)*
+    -   *`GET /v2/schools/{school_name_query}/details` (with V2 scoring factor details)*
 
 ## Testing
 
@@ -127,13 +145,13 @@ The project uses `pytest` for testing.
     The test `tests/test_quality_recommendations.py::test_generate_recommendation_quality_report` (run as part of the normal `pytest` command) generates a text file: `tests/quality_test_results.txt`.
     This file contains recommendations for various student profiles across all programs, formatted for manual review.
 
-## Example: Get School Statistics
+## Example: Get School Statistics (V1)
 
 ```bash
 curl -X GET "http://localhost:8000/school/University%20of%20Pennsylvania"
 ```
 
-## Example: Get Recommendations
+## Example: Get Recommendations (V1)
 
 ```bash
 curl -X POST "http://localhost:8000/recommendations" \
@@ -144,6 +162,31 @@ curl -X POST "http://localhost:8000/recommendations" \
            "program": "Computer Science",
            "act": 30,
            "number_of_recommendations": 3
+         }'
+```
+
+## Example: Get Recommendations (V2 - New)
+
+```bash
+curl -X POST "http://localhost:8000/v2/recommendations" \
+     -H "Content-Type: application/json" \
+     -d '{
+           "student_profile": {
+             "gpa": 3.7,
+             "sat": 1350,
+             "act": 29
+           },
+           "program_query": "Computer Science",
+           "preferences": {
+             "academic_focus": "match",
+             "location": {"states": ["CA"], "region": "West"},
+             "cost": {"max_net_price_per_year": 40000, "importance": "high"},
+             "school_size": ["medium", "large"],
+             "school_type": "public",
+             "career_outcomes_importance": "high",
+             "selectivity_preference": "moderate"
+           },
+           "number_of_recommendations": 5
          }'
 ```
 
